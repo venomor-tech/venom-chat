@@ -1,0 +1,1920 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>VENOM Chat</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root { color-scheme: dark; }
+  html, body { height: 100%; }
+  body { background: #000; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+  .fade-in { animation: fadeIn .18s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  .gold { background: linear-gradient(90deg, #fde68a, #f59e0b 50%, #fde68a); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .inp { width: 100%; background: #09090b; border: 1px solid #27272a; border-radius: .65rem; padding: .7rem .85rem; color: #fff; outline: none; }
+  .inp:focus { border-color: #f59e0b; }
+  .btn { border-radius: .6rem; padding: .45rem .9rem; font-size: .8rem; font-weight: 600; transition: filter .15s; }
+  .btn:hover { filter: brightness(1.15); }
+  .btn-gold { background: linear-gradient(135deg, #fcd34d, #f59e0b); color: #000; }
+  .btn-gray { background: #27272a; color: #e4e4e7; }
+  .btn-green { background: #16a34a; color: #fff; }
+  .btn-red { background: rgba(220, 38, 38, .22); color: #f87171; }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.72); z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
+  .modal.hidden { display: none; }
+  .modal > div { background: #0c0c0e; border: 1px solid #27272a; width: 100%; max-height: 92vh; overflow-y: auto; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem; }
+  @media (min-width: 768px) { .modal { align-items: center; padding: 1rem; } .modal > div { max-width: 28rem; border-radius: 1.25rem; } .modal > div.wide { max-width: 42rem; } }
+  .chat-row.active { background: #18181b; }
+  .msg-text { white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; }
+  #chat-messages { background-image: radial-gradient(circle at 20% 0%, rgba(245,158,11,.05), transparent 40%), radial-gradient(circle at 90% 100%, rgba(255,255,255,.03), transparent 35%); }
+  #message-input { max-height: 8rem; resize: none; }
+  .safe-b { padding-bottom: max(.5rem, env(safe-area-inset-bottom)); }
+  /* موبايل: شاشة واحدة في المرة (القايمة أو المحادثة) */
+  @media (max-width: 767px) {
+    #sidebar { width: 100%; }
+    body[data-view="list"] #chat-pane { display: none; }
+    body[data-view="chat"] #sidebar { display: none; }
+  }
+  @media (min-width: 768px) { #back-btn { display: none; } }
+</style>
+</head>
+<body data-view="list" class="text-zinc-100 overflow-hidden">
+
+<!-- ===================== الدخول / التسجيل ===================== -->
+<div id="auth-screen" class="h-full flex items-center justify-center p-4 overflow-y-auto">
+  <div class="w-full max-w-sm bg-zinc-950 border border-zinc-800 rounded-2xl p-7 shadow-2xl">
+    <div class="text-center mb-6">
+      <div class="text-4xl font-black tracking-[.3em] gold">VENOM</div>
+      <div id="auth-title" class="text-sm text-zinc-500 mt-2">تسجيل الدخول</div>
+    </div>
+
+    <div id="register-extra" class="hidden space-y-3 mb-3">
+      <input type="text" id="display-name" maxlength="40" placeholder="اسمك اللي هيظهر للناس" class="inp">
+      <input type="text" id="invite-code" placeholder="كود الدعوة" class="inp" dir="ltr" style="text-align:right">
+    </div>
+
+    <input type="email" id="email" placeholder="البريد الإلكتروني" class="inp mb-3" dir="ltr" style="text-align:right">
+    <input type="password" id="password" placeholder="كلمة المرور" class="inp mb-4" onkeydown="if(event.key==='Enter')handleAuth()">
+
+    <button id="auth-btn" onclick="handleAuth()" class="btn btn-gold w-full !py-3 !text-base">دخول</button>
+
+    <p class="text-center mt-4 text-sm text-zinc-400 cursor-pointer hover:underline" onclick="toggleAuthMode()">
+      <span id="auth-switch-text">معندكش حساب؟ إنشاء حساب جديد</span>
+    </p>
+
+    <!-- التنويه: واضح ودايمًا ظاهر -->
+    <p class="text-center mt-4 text-[11px] leading-snug text-zinc-500 border-t border-zinc-800 pt-3">
+      لأغراض الحماية والإشراف، صاحب المنصة (الأدمن) له صلاحية الاطلاع على جميع المحادثات، العامة والخاصة.
+    </p>
+  </div>
+</div>
+
+<!-- ===================== انتظار الموافقة ===================== -->
+<div id="pending-screen" class="hidden h-full flex flex-col items-center justify-center text-center p-4">
+  <div class="bg-zinc-950 p-8 rounded-2xl border border-amber-600/60 max-w-md">
+    <h2 class="text-2xl font-bold text-amber-400 mb-4">حسابك قيد المراجعة ⏳</h2>
+    <p class="text-zinc-300 mb-6">تم تسجيل حسابك بنجاح، وهيتفعّل بعد ما يوافق عليه الأدمن. هتدخل لوحدك أول ما يتفعّل.</p>
+    <button onclick="logout()" class="btn btn-gray">تسجيل الخروج</button>
+  </div>
+</div>
+
+<!-- ===================== موقوف للمراجعة ===================== -->
+<div id="suspended-screen" class="hidden h-full flex flex-col items-center justify-center text-center p-4">
+  <div class="bg-zinc-950 p-8 rounded-2xl border border-red-700 max-w-md">
+    <h2 class="text-2xl font-bold text-red-500 mb-4">حسابك موقوف للمراجعة</h2>
+    <p class="text-zinc-300 mb-6">تم إيقاف حسابك مؤقتًا لحد ما الأدمن يراجع الموضوع. هتقدر تدخل تاني أول ما يتفعّل.</p>
+    <button onclick="logout()" class="btn btn-gray">تسجيل الخروج</button>
+  </div>
+</div>
+
+<!-- ===================== التطبيق ===================== -->
+<div id="app-screen" class="hidden h-full w-full flex">
+
+  <!-- ===== القايمة الجانبية ===== -->
+  <aside id="sidebar" class="md:w-[22rem] lg:w-[24rem] shrink-0 bg-zinc-950 border-l border-zinc-800 flex flex-col h-full min-h-0">
+    <header class="p-3 flex items-center gap-3 border-b border-zinc-800">
+      <button onclick="openSettings()" id="my-avatar" class="shrink-0"></button>
+      <div class="flex-1 min-w-0 cursor-pointer" onclick="openSettings()">
+        <div id="my-name" class="font-bold truncate"></div>
+        <div id="my-about" class="text-xs text-zinc-500 truncate"></div>
+      </div>
+      <button id="owner-tools" onclick="openPanel('admin')" title="لوحة التحكم" class="hidden btn btn-gold !px-2.5">👑</button>
+      <button onclick="openSettings()" title="الإعدادات" class="text-zinc-400 hover:text-white text-lg px-1">⚙</button>
+      <button onclick="logout()" title="خروج" class="text-zinc-500 hover:text-white text-lg px-1">⏻</button>
+    </header>
+
+    <div class="p-3 flex gap-2 items-center">
+      <div class="relative flex-1">
+        <input id="search-input" type="search" placeholder="ابحث عن شخص أو جروب..." class="inp !py-2 !pr-9" autocomplete="off">
+        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none">🔍</span>
+      </div>
+      <button id="new-btn" class="btn btn-gold !py-2 !px-3 text-lg leading-none" title="جديد">＋</button>
+    </div>
+
+    <div id="tabs" class="flex gap-1 px-3 pb-2 overflow-x-auto text-sm shrink-0"></div>
+
+    <div id="chat-list" class="flex-1 overflow-y-auto min-h-0"></div>
+  </aside>
+
+  <!-- ===== منطقة المحادثة ===== -->
+  <main id="chat-pane" class="flex-1 flex flex-col h-full min-w-0 min-h-0 bg-black">
+    <div id="empty-state" class="flex-1 flex flex-col items-center justify-center text-zinc-600 p-6 text-center">
+      <div class="text-5xl font-black tracking-[.3em] gold mb-3">VENOM</div>
+      <div class="text-sm">اختار محادثة من القايمة، أو ابحث عن حد تكلمه</div>
+    </div>
+
+    <div id="chat-view" class="hidden flex-1 flex flex-col min-h-0">
+      <header id="chat-header" class="bg-zinc-950 border-b border-zinc-800 px-2 py-2 flex items-center gap-2 shrink-0">
+        <button id="back-btn" class="text-xl px-2 text-zinc-300">➜</button>
+        <div id="ch-avatar" class="shrink-0"></div>
+        <div class="flex-1 min-w-0 cursor-pointer" id="ch-info">
+          <div id="ch-title" class="font-bold truncate"></div>
+          <div id="ch-sub" class="text-xs text-zinc-500 truncate"></div>
+        </div>
+        <button id="ch-info-btn" class="btn btn-gray !px-3">ⓘ</button>
+      </header>
+
+      <div id="room-bar" class="hidden bg-zinc-900/80 px-3 py-2 border-b border-zinc-800 text-sm flex flex-wrap items-center gap-2 shrink-0"></div>
+
+      <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-1.5 min-h-0"></div>
+
+      <div id="composer-wrap" class="relative bg-zinc-950 border-t border-zinc-800 shrink-0 safe-b">
+        <div id="reply-bar" class="hidden px-3 pt-2 flex items-center gap-2 text-xs">
+          <div class="flex-1 min-w-0 border-r-4 border-amber-400 pr-2 bg-zinc-900 rounded py-1">
+            <div id="reply-title" class="text-amber-400 font-bold"></div>
+            <div id="reply-text" class="text-zinc-400 truncate"></div>
+          </div>
+          <button id="reply-cancel" class="text-zinc-400 text-lg px-2">✕</button>
+        </div>
+        <div id="mention-box" class="hidden absolute bottom-full right-2 left-2 mb-1 bg-zinc-900 border border-zinc-700 rounded-xl overflow-hidden shadow-xl z-20 max-h-56 overflow-y-auto"></div>
+        <div id="emoji-panel" class="hidden px-3 pt-2">
+          <div class="flex gap-2 mb-2 text-sm">
+            <button id="ep-emoji" class="btn btn-gold">إيموجي</button>
+            <button id="ep-stickers" class="btn btn-gray">ملصقات</button>
+          </div>
+          <div id="ep-body" class="grid gap-1 max-h-44 overflow-y-auto pb-1"></div>
+        </div>
+        <div class="flex items-end gap-2 p-2">
+          <button id="emoji-btn" class="text-2xl px-1 pb-1.5 text-zinc-400 hover:text-amber-400">😊</button>
+          <textarea id="message-input" rows="1" placeholder="اكتب رسالتك هنا..." class="inp flex-1 !py-2.5" autocomplete="off"></textarea>
+          <button id="send-btn" class="btn btn-gold !px-4 !py-2.5 text-lg leading-none">➤</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ===================== القوايم والإشعارات ===================== -->
+<div id="ctx-menu" class="hidden fixed z-[60] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl py-1 min-w-[11rem] max-w-[16rem]"></div>
+<div id="toast" class="fixed top-3 left-1/2 -translate-x-1/2 z-[70] flex flex-col gap-2 items-center pointer-events-none"></div>
+
+<!-- ===================== مودال: لوحة التحكم ===================== -->
+<div id="modal-admin" class="modal hidden"><div class="wide">
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-xl font-bold text-amber-400">👑 لوحة التحكم</h2>
+    <button onclick="closePanel('admin')" class="text-zinc-400 hover:text-white text-xl">✕</button>
+  </div>
+
+  <div id="public-lock-section" class="hidden mb-6">
+    <h3 class="font-bold text-sm text-zinc-400 mb-2">الجروب العام</h3>
+    <div class="bg-black p-3 rounded-xl border border-zinc-800 flex items-center gap-3">
+      <span id="public-lock-state" class="flex-1 text-sm"></span>
+      <button id="public-lock-btn" class="btn btn-gray"></button>
+    </div>
+    <p class="text-[11px] text-zinc-500 mt-1">لما يتقفل، الأعضاء بيقروا بس، وإنت والأدمن بتكتبوا.</p>
+  </div>
+
+  <div id="invites-section" class="mb-6 hidden">
+    <h3 class="font-bold text-sm text-zinc-400 mb-2">أكواد الدعوة</h3>
+    <div class="bg-black p-3 rounded-xl border border-zinc-800 mb-3 flex flex-wrap gap-2 items-center">
+      <select id="invite-type" class="bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-sm">
+        <option value="once">مرة واحدة</option>
+        <option value="limited">عدد محدد</option>
+        <option value="unlimited">لا نهائي</option>
+      </select>
+      <input type="number" id="invite-max" min="2" value="5" class="hidden w-20 bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-sm" placeholder="العدد">
+      <button id="invite-create" class="btn btn-gold">توليد كود</button>
+    </div>
+    <div id="invites-list" class="space-y-2"></div>
+  </div>
+
+  <div class="mb-6">
+    <h3 class="font-bold text-sm text-zinc-400 mb-2">طلبات الأعضاء الجدد</h3>
+    <div id="pending-users-list" class="space-y-2"></div>
+  </div>
+
+  <div class="mb-6">
+    <h3 class="font-bold text-sm text-zinc-400 mb-2">البلاغات</h3>
+    <div id="reports-list" class="space-y-2"></div>
+  </div>
+
+  <div>
+    <h3 class="font-bold text-sm text-zinc-400 mb-2">كل الأعضاء</h3>
+    <div id="all-users-list" class="space-y-2"></div>
+  </div>
+</div></div>
+
+<!-- ===================== مودال: رسالة خاصة جديدة ===================== -->
+<div id="modal-new-dm" class="modal hidden"><div>
+  <div class="flex justify-between items-center mb-2">
+    <h2 class="text-lg font-bold">محادثة خاصة جديدة</h2>
+    <button onclick="closePanel('new-dm')" class="text-zinc-400 hover:text-white text-xl">✕</button>
+  </div>
+  <p id="dm-hint" class="text-xs text-zinc-500 mb-3"></p>
+  <input id="ndm-search" type="search" placeholder="ابحث بالاسم..." class="inp mb-3" autocomplete="off">
+  <div id="dm-users-list" class="space-y-1"></div>
+</div></div>
+
+<!-- ===================== مودال: جروب جديد ===================== -->
+<div id="modal-new-group" class="modal hidden"><div>
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-lg font-bold">جروب جديد</h2>
+    <button onclick="closePanel('new-group')" class="text-zinc-400 hover:text-white text-xl">✕</button>
+  </div>
+  <input type="text" id="new-group-name" maxlength="60" placeholder="اسم الجروب" class="inp mb-2">
+  <p class="text-xs text-zinc-500 mb-4">إنت هتبقى أدمن الجروب وتقدر تضيف ناس تانيين.</p>
+  <button onclick="createGroup()" class="btn btn-gold w-full !py-3">إنشاء</button>
+</div></div>
+
+<!-- ===================== مودال: الإعدادات / الملف الشخصي ===================== -->
+<div id="modal-settings" class="modal hidden"><div>
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-lg font-bold">الإعدادات والملف الشخصي</h2>
+    <button onclick="closePanel('settings')" class="text-zinc-400 hover:text-white text-xl">✕</button>
+  </div>
+
+  <div class="flex items-center gap-4 mb-4">
+    <div id="settings-avatar"></div>
+    <div class="flex flex-col gap-2">
+      <label class="btn btn-gray cursor-pointer text-center">تغيير الصورة
+        <input type="file" id="settings-photo" accept="image/*" class="hidden">
+      </label>
+      <button id="settings-photo-remove" class="btn btn-red">إزالة الصورة</button>
+    </div>
+  </div>
+
+  <label class="text-xs text-zinc-400">الاسم</label>
+  <input id="settings-name" maxlength="40" class="inp mb-3" placeholder="اسمك">
+  <label class="text-xs text-zinc-400">رقم الموبايل (اختياري)</label>
+  <input id="settings-phone" maxlength="30" class="inp mb-1" placeholder="+20..." dir="ltr" style="text-align:right">
+  <p class="text-[11px] text-zinc-500 mb-3">الرقم بيظهر للأدمن بس، مش لباقي الأعضاء.</p>
+
+  <label class="text-xs text-zinc-400">الحالة</label>
+  <input id="settings-about" maxlength="100" class="inp mb-2" placeholder="مثلًا: متاح">
+  <div id="settings-about-presets" class="flex flex-wrap gap-2 mb-4"></div>
+
+  <label class="flex items-center gap-2 text-sm mb-4 cursor-pointer">
+    <input type="checkbox" id="settings-discoverable" class="accent-amber-500 w-4 h-4">
+    <span>يظهر اسمي في البحث وقايمة "جديد"</span>
+  </label>
+
+  <div class="flex flex-wrap gap-2 mb-4">
+    <button id="notif-btn" class="btn btn-gray">🔔 تفعيل إشعارات المتصفح</button>
+    <button id="install-btn" class="hidden btn btn-gray">📲 تثبيت التطبيق</button>
+  </div>
+
+  <button id="settings-save" class="btn btn-gold w-full !py-3">حفظ</button>
+</div></div>
+
+<!-- ===================== مودال: ملف شخص ===================== -->
+<div id="modal-profile" class="modal hidden"><div>
+  <div class="flex justify-end mb-1"><button onclick="closePanel('profile')" class="text-zinc-400 hover:text-white text-xl">✕</button></div>
+  <div id="profile-body"></div>
+</div></div>
+
+<!-- ===================== مودال: معلومات الجروب ===================== -->
+<div id="modal-group-info" class="modal hidden"><div>
+  <div class="flex justify-between items-center mb-3">
+    <h2 id="gi-title" class="text-lg font-bold truncate"></h2>
+    <button onclick="closePanel('group-info')" class="text-zinc-400 hover:text-white text-xl">✕</button>
+  </div>
+  <div id="gi-actions" class="flex flex-wrap gap-2 mb-4"></div>
+  <h3 class="font-bold text-sm text-zinc-400 mb-2">الأعضاء</h3>
+  <div id="gi-members" class="space-y-1 mb-5"></div>
+  <div id="gi-add-section">
+    <h3 class="font-bold text-sm text-zinc-400 mb-1">إضافة عضو</h3>
+    <p class="text-[11px] text-zinc-500 mb-2">اللي اتكلمت معاه قبل كده بيتضاف مباشرة. غير كده بتتبعتله دعوة. اللي خرج أو اتشال لازم دعوة.</p>
+    <input id="gi-search" type="search" placeholder="ابحث بالاسم..." class="inp mb-2" autocomplete="off">
+    <div id="gi-candidates" class="space-y-1"></div>
+  </div>
+</div></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import {
+  getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import {
+  getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, getDoc,
+  setDoc, updateDoc, deleteDoc, where, serverTimestamp, limit, arrayUnion, arrayRemove,
+  writeBatch, increment, deleteField, Timestamp
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+/* =========================================================
+   إعدادات المشروع
+   ========================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDCFMdymp0L0tptbkgUguDRDGb8w_Imz7Q",
+  authDomain: "venomor-29bb2.firebaseapp.com",
+  projectId: "venomor-29bb2",
+  storageBucket: "venomor-29bb2.firebasestorage.app",
+  messagingSenderId: "74678681269",
+  appId: "1:74678681269:web:0f714c914aec46d0e408fc"
+};
+
+/* إيميل الرئيس: لازم يكون نفسه المكتوب في firestore.rules */
+const OWNER_EMAIL = "venom@admin.com";
+/* اسم الرئيس اللي بيظهر للكل + الكلمة الصغيرة جنبه */
+const OWNER_NAME = "VENOM";
+const OWNER_TAG = "منشئ الموقع";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ---------------- الحالة ---------------- */
+let isLoginMode = true;
+let registering = false;
+let currentUserDoc = null;       // { uid, email, name, role, status, phone }
+let unsubs = [];
+let unsubMessages = null;
+
+let directory = {};              // uid -> { name, role, photo, discoverable, about }
+let myNicknames = {};            // uid -> اسم من عندي
+let chatPrefs = {};              // roomId -> { pinned, archived, muted }
+let myBlocks = new Set();
+let groupsCache = [];
+let dmsCache = [];
+let groupInvites = [];           // دعوات جروبات وصلتلي (pending)
+let usersCache = [];             // للأدمن
+let reportsCache = [];
+let generalMeta = {};            // آخر رسالة في الجروب العام
+let publicOpen = true;
+
+let currentRoomId = null;
+let currentRoomType = null;      // public | group | dm
+let currentTab = "all";
+let searchQuery = "";
+let lastMessages = [];
+let lastRead = {};
+let seenLast = {};
+let replyTo = null;              // { id, uid, text }
+let editing = null;              // الرسالة اللي بتتعدل
+let mentionMap = {};             // الاسم -> uid
+let scrollNext = false;
+let deferredInstall = null;
+let giGroupId = null, giQuery = "";
+let pendingPhoto;                // undefined = من غير تغيير، "" = إزالة
+
+/* ---------------- أدوات ---------------- */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const showErr = (e) => alert("معرفتش: " + (e && (e.code || e.message) || e));
+const tsMs = (t) => (t && typeof t.toMillis === "function") ? t.toMillis() : (t && t.seconds ? t.seconds * 1000 : 0);
+const tfmt = new Intl.DateTimeFormat("ar-EG", { hour: "numeric", minute: "2-digit" });
+const fmtTime = (ms) => ms ? tfmt.format(new Date(ms)) : "";
+function fmtListTime(ms) {
+  if (!ms) return "";
+  const d = new Date(ms), n = new Date();
+  if (d.toDateString() === n.toDateString()) return fmtTime(ms);
+  if (d.toDateString() === new Date(n.getTime() - 864e5).toDateString()) return "أمس";
+  return d.toLocaleDateString("ar-EG", { day: "numeric", month: "short" });
+}
+function daySepLabel(ms) {
+  const d = new Date(ms), n = new Date();
+  if (d.toDateString() === n.toDateString()) return "اليوم";
+  if (d.toDateString() === new Date(n.getTime() - 864e5).toDateString()) return "أمس";
+  return d.toLocaleDateString("ar-EG", { weekday: "long", day: "numeric", month: "long" });
+}
+function normalize(s) {
+  return String(s || "").toLowerCase().replace(/[ً-ٟـ]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").trim();
+}
+const PHOTO_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/;
+const validPhoto = (p) => typeof p === "string" && p.length < 40000 && PHOTO_RE.test(p);
+const dmIdFor = (a, b) => { const [x, y] = [a, b].sort(); return `dm_${x}_${y}`; };
+const isPriv = () => currentUserDoc && (currentUserDoc.role === "owner" || currentUserDoc.role === "admin");
+const isOwnerMe = () => currentUserDoc && currentUserDoc.role === "owner";
+
+function show(id, visible) { $(id).classList.toggle("hidden", !visible); }
+window.openPanel = (n) => $("modal-" + n).classList.remove("hidden");
+window.closePanel = (n) => $("modal-" + n).classList.add("hidden");
+
+function toast(msg, ms = 3800) {
+  const t = document.createElement("div");
+  t.className = "fade-in bg-zinc-900 border border-amber-500/50 text-sm px-4 py-2 rounded-xl shadow-xl max-w-[90vw] pointer-events-auto";
+  t.innerText = msg;
+  $("toast").appendChild(t);
+  setTimeout(() => t.remove(), ms);
+}
+
+/* ---------------- الأسماء والصور ---------------- */
+const isOwnerUid = (uid) => !!(directory[uid] && directory[uid].role === "owner");
+function realName(uid) {
+  if (isOwnerUid(uid)) return OWNER_NAME;
+  return (directory[uid] && directory[uid].name) || "مستخدم";
+}
+const nameOf = (uid) => myNicknames[uid] || realName(uid);
+// اسم بشكل HTML: الرئيس لون مميز + "منشئ الموقع" بخط أصغر، الباقي لون عادي
+function nameHtml(uid, onLight) {
+  const n = esc(nameOf(uid));
+  if (isOwnerUid(uid)) {
+    return onLight
+      ? `<span class="font-bold">${n}</span><span class="text-[10px] font-normal opacity-70 mr-1">${OWNER_TAG}</span>`
+      : `<span class="text-amber-400 font-bold">${n}</span><span class="text-[10px] text-amber-200/70 font-normal mr-1">${OWNER_TAG}</span>`;
+  }
+  return `<span>${n}</span>`;
+}
+function avatarHtml(uid, size = 40) {
+  const d = directory[uid] || {};
+  const st = `width:${size}px;height:${size}px;min-width:${size}px;`;
+  const ring = d.role === "owner" ? "ring-2 ring-amber-400" : "";
+  if (validPhoto(d.photo)) return `<img src="${d.photo}" alt="" class="rounded-full object-cover ${ring}" style="${st}">`;
+  const letter = esc((realName(uid) || "؟").trim().charAt(0) || "؟");
+  const bg = d.role === "owner" ? "bg-gradient-to-br from-amber-300 to-yellow-600 text-black" : "bg-zinc-700 text-white";
+  return `<span class="rounded-full flex items-center justify-center font-bold ${bg} ${ring}" style="${st}font-size:${Math.round(size * .42)}px">${letter}</span>`;
+}
+function iconAvatar(emoji, size = 48) {
+  return `<span class="rounded-full flex items-center justify-center bg-zinc-800 border border-amber-500/40" style="width:${size}px;height:${size}px;min-width:${size}px;font-size:${Math.round(size * .5)}px">${emoji}</span>`;
+}
+function groupAvatar(name, size = 48) {
+  return `<span class="rounded-full flex items-center justify-center bg-zinc-800 border border-zinc-600 font-bold" style="width:${size}px;height:${size}px;min-width:${size}px;font-size:${Math.round(size * .42)}px">${esc((name || "?").trim().charAt(0))}</span>`;
+}
+
+/* =========================================================
+   الدخول والتسجيل
+   ========================================================= */
+window.toggleAuthMode = function () {
+  isLoginMode = !isLoginMode;
+  $("auth-title").innerText = isLoginMode ? "تسجيل الدخول" : "إنشاء حساب جديد";
+  $("auth-btn").innerText = isLoginMode ? "دخول" : "تسجيل";
+  $("auth-switch-text").innerText = isLoginMode ? "معندكش حساب؟ إنشاء حساب جديد" : "عندك حساب بالفعل؟ سجل دخولك";
+  $("register-extra").classList.toggle("hidden", isLoginMode);
+};
+
+window.handleAuth = async function () {
+  const email = $("email").value.trim();
+  const password = $("password").value;
+  if (!email || !password) { alert("يرجى ملء جميع الحقول!"); return; }
+  try {
+    if (isLoginMode) { await signInWithEmailAndPassword(auth, email, password); return; }
+
+    const name = $("display-name").value.trim().slice(0, 40);
+    const code = $("invite-code").value.trim().toUpperCase();
+    if (!name) { alert("اكتب اسمك الأول"); return; }
+    const isOwner = email.toLowerCase() === OWNER_EMAIL.toLowerCase();
+    if (!isOwner && !code) { alert("اكتب كود الدعوة"); return; }
+
+    registering = true;
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const user = cred.user;
+    const data = isOwner
+      ? { email, name: OWNER_NAME, role: "owner", status: "approved", createdAt: serverTimestamp() }
+      : { email, name, role: "member", status: "pending", inviteCode: code, createdAt: serverTimestamp() };
+    try {
+      const batch = writeBatch(db);
+      batch.set(doc(db, "users", user.uid), data);
+      if (!isOwner) batch.update(doc(db, "invites", code), { uses: increment(1) });
+      await batch.commit();
+    } catch (e) {
+      try { await user.delete(); } catch (_) {}
+      registering = false;
+      await signOut(auth).catch(() => {});
+      alert(e.code === "permission-denied" || e.code === "not-found" ? "كود الدعوة غلط أو خلص عدد استخداماته." : "حصلت مشكلة أثناء التسجيل: " + (e.code || e.message));
+      return;
+    }
+    registering = false;
+    await routeUser(user);
+  } catch (error) {
+    registering = false;
+    alert("خطأ: " + translateError(error.code || error.message));
+  }
+};
+
+function translateError(code) {
+  const map = {
+    "auth/email-already-in-use": "الإيميل ده مسجل قبل كده.",
+    "auth/invalid-email": "الإيميل مش صحيح.",
+    "auth/weak-password": "كلمة المرور ضعيفة (6 أحرف على الأقل).",
+    "auth/invalid-credential": "الإيميل أو كلمة المرور غلط.",
+    "auth/user-not-found": "مفيش حساب بالإيميل ده.",
+    "auth/wrong-password": "كلمة المرور غلط.",
+    "auth/network-request-failed": "مفيش اتصال بالإنترنت."
+  };
+  return map[code] || code;
+}
+
+window.logout = function () {
+  unsubs.forEach((u) => { try { u(); } catch (_) {} });
+  unsubs = [];
+  if (unsubMessages) { unsubMessages(); unsubMessages = null; }
+  signOut(auth);
+};
+
+onAuthStateChanged(auth, async (user) => {
+  if (registering) return;
+  await routeUser(user);
+});
+
+async function routeUser(user) {
+  show("auth-screen", false); show("pending-screen", false); show("suspended-screen", false); show("app-screen", false);
+  if (!user) { show("auth-screen", true); return; }
+  try {
+    let uSnap = await getDoc(doc(db, "users", user.uid));
+    if (!uSnap.exists()) {
+      if (user.email.toLowerCase() === OWNER_EMAIL.toLowerCase()) {
+        await setDoc(doc(db, "users", user.uid), { email: user.email, name: OWNER_NAME, role: "owner", status: "approved", createdAt: serverTimestamp() });
+        uSnap = await getDoc(doc(db, "users", user.uid));
+      } else {
+        await signOut(auth);
+        show("auth-screen", true);
+        alert("الحساب ده مش مكتمل. اطلب من الأدمن يمسحه من Authentication وسجل من جديد بكود الدعوة.");
+        return;
+      }
+    }
+    currentUserDoc = { uid: user.uid, ...uSnap.data() };
+    if (currentUserDoc.status !== "approved") {
+      show(currentUserDoc.status === "suspended" ? "suspended-screen" : "pending-screen", true);
+      unsubs.push(onSnapshot(doc(db, "users", user.uid), (s) => {
+        if (s.exists() && s.data().status === "approved") location.reload();
+      }));
+      return;
+    }
+    startApp();
+  } catch (e) {
+    console.error(e);
+    show("auth-screen", true);
+    alert("مشكلة في الاتصال بقاعدة البيانات: " + (e.code || e.message) + "\nتأكد إن Firestore Database متعمل وإن الـ Rules منشورة.");
+  }
+}
+
+/* =========================================================
+   بدء التطبيق
+   ========================================================= */
+function startApp() {
+  show("app-screen", true);
+  document.body.dataset.view = "list";
+  const me = currentUserDoc.uid;
+  try { lastRead = JSON.parse(localStorage.getItem("venom_lr_" + me) || "{}"); } catch (_) { lastRead = {}; }
+
+  $("owner-tools").classList.toggle("hidden", !isPriv());
+  $("public-lock-section").classList.toggle("hidden", !isOwnerMe());
+  $("invites-section").classList.toggle("hidden", !isOwnerMe());
+
+  unsubs.push(onSnapshot(doc(db, "users", me), (s) => {
+    if (s.exists() && (s.data().status !== "approved" || s.data().role !== currentUserDoc.role)) location.reload();
+  }));
+
+  publishDirectoryEntry();
+  watchDirectory();
+  watchNicknames();
+  watchChatPrefs();
+  watchMyBlocks();
+  watchPublicSettings();
+  watchGeneralMeta();
+  loadMyGroups();
+  loadMyDms();
+  watchGroupInvites();
+  if (isPriv()) { watchPendingUsers(); watchAllUsers(); watchReports(); }
+  if (isOwnerMe()) watchInvites();
+
+  setupTabs();
+  renderMeHeader();
+  renderChatList();
+}
+
+async function publishDirectoryEntry() {
+  try {
+    await setDoc(doc(db, "directory", currentUserDoc.uid), { name: currentUserDoc.name, role: currentUserDoc.role }, { merge: true });
+  } catch (e) { console.error("directory", e); }
+}
+
+function rerenderAll() {
+  renderMeHeader();
+  renderChatList();
+  if (currentRoomId) { renderChatHeader(); renderRoomBar(); renderComposerState(); renderMessages(); }
+  renderReports();
+  if (!$("modal-group-info").classList.contains("hidden")) renderGroupInfo();
+}
+
+function renderMeHeader() {
+  const me = currentUserDoc.uid;
+  $("my-avatar").innerHTML = avatarHtml(me, 44);
+  $("my-name").innerHTML = nameHtml(me).replace(/myNick/g, "");
+  const d = directory[me] || {};
+  $("my-about").innerText = d.about || (isOwnerMe() ? OWNER_TAG : "");
+}
+
+/* =========================================================
+   مستمعات البيانات
+   ========================================================= */
+function watchDirectory() {
+  unsubs.push(onSnapshot(collection(db, "directory"), (snap) => {
+    directory = {};
+    snap.forEach((d) => { directory[d.id] = d.data(); });
+    rerenderAll();
+  }));
+}
+function watchNicknames() {
+  unsubs.push(onSnapshot(collection(db, "users", currentUserDoc.uid, "nicknames"), (snap) => {
+    myNicknames = {};
+    snap.forEach((d) => { myNicknames[d.id] = d.data().nickname; });
+    rerenderAll();
+  }));
+}
+function watchChatPrefs() {
+  unsubs.push(onSnapshot(collection(db, "users", currentUserDoc.uid, "chatPrefs"), (snap) => {
+    chatPrefs = {};
+    snap.forEach((d) => { chatPrefs[d.id] = d.data(); });
+    renderChatList();
+  }));
+}
+function watchMyBlocks() {
+  const q = query(collection(db, "blocks"), where("blocker", "==", currentUserDoc.uid));
+  unsubs.push(onSnapshot(q, (snap) => {
+    myBlocks = new Set(snap.docs.map((d) => d.data().blocked));
+    renderRoomBar(); renderComposerState();
+  }));
+}
+function watchPublicSettings() {
+  unsubs.push(onSnapshot(doc(db, "settings", "public"), (s) => {
+    publicOpen = !s.exists() || s.data().open !== false;
+    renderPublicLock();
+    renderChatHeader(); renderRoomBar(); renderComposerState(); renderChatList();
+  }, () => {}));
+}
+function watchGeneralMeta() {
+  unsubs.push(onSnapshot(doc(db, "rooms", "general"), (s) => {
+    generalMeta = s.exists() ? s.data({ serverTimestamps: "estimate" }) : {};
+    renderChatList();
+  }, () => {}));
+}
+function loadMyGroups() {
+  const q = isPriv()
+    ? collection(db, "groups")
+    : query(collection(db, "groups"), where("members", "array-contains", currentUserDoc.uid));
+  unsubs.push(onSnapshot(q, (snap) => {
+    groupsCache = snap.docs.map((d) => ({ id: d.id, ...d.data({ serverTimestamps: "estimate" }) }));
+    renderChatList(); renderChatHeader(); renderComposerState();
+    if (!$("modal-group-info").classList.contains("hidden")) renderGroupInfo();
+  }));
+}
+function loadMyDms() {
+  const q = isPriv()
+    ? collection(db, "dms")
+    : query(collection(db, "dms"), where("members", "array-contains", currentUserDoc.uid));
+  unsubs.push(onSnapshot(q, (snap) => {
+    dmsCache = snap.docs.map((d) => ({ id: d.id, ...d.data({ serverTimestamps: "estimate" }) }));
+    renderChatList(); renderChatHeader(); renderRoomBar(); renderComposerState();
+  }));
+}
+function watchGroupInvites() {
+  const q = query(collection(db, "groupInvites"), where("to", "==", currentUserDoc.uid));
+  unsubs.push(onSnapshot(q, (snap) => {
+    groupInvites = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((i) => i.status === "pending");
+    renderChatList();
+  }));
+}
+
+/* =========================================================
+   قايمة المحادثات (الكل / خاص / جروبات / مؤرشفة / إشراف) + بحث + تثبيت
+   ========================================================= */
+const isDmMember = (dm) => dm.members.includes(currentUserDoc.uid);
+const otherOf = (dm) => dm.members.find((u) => u !== currentUserDoc.uid) || dm.members[0];
+
+function isExpired(dm) {
+  return dm.status === "accepted" && dm.ownerDm === true && dm.open !== true && !(dm.until && tsMs(dm.until) > Date.now());
+}
+
+function buildItems() {
+  const me = currentUserDoc.uid;
+  const items = [];
+  const mk = (b) => {
+    const p = chatPrefs[b.id] || {};
+    const meta = b.meta || {};
+    const lastAt = tsMs(meta.lastMessageAt) || b.createdAt || 0;
+    const lastSender = meta.lastSenderUid;
+    const unread = !!meta.lastMessageAt && lastSender && lastSender !== me && lastAt > (lastRead[b.id] || 0);
+    const mention = unread && (meta.lastMentions || []).includes(me);
+    let preview = "";
+    if (meta.lastMessage) {
+      const mine = lastSender === me;
+      preview = (b.type === "dm" && !mine) ? meta.lastMessage : `${mine ? "أنت" : nameOf(lastSender)}: ${meta.lastMessage}`;
+    }
+    return { ...b, pinned: !!p.pinned, archived: !!p.archived, muted: !!p.muted, lastAt, unread, mention, preview, lastSender };
+  };
+  items.push(mk({ id: "general", type: "public", mine: true, meta: generalMeta, title: "الجروب العام", createdAt: 0 }));
+  groupsCache.forEach((g) => items.push(mk({ id: g.id, type: "group", mine: (g.members || []).includes(me), meta: g, title: g.name, createdAt: tsMs(g.createdAt) })));
+  dmsCache.forEach((dm) => {
+    const mineDm = isDmMember(dm);
+    const title = mineDm ? nameOf(otherOf(dm)) : `${nameOf(dm.members[0])} ↔ ${nameOf(dm.members[1])}`;
+    items.push(mk({ id: dm.id, type: "dm", mine: mineDm, meta: dm, dm, title, createdAt: tsMs(dm.createdAt) }));
+  });
+  return items;
+}
+
+function inTab(it) {
+  if (currentTab === "supervise") return !it.mine;
+  if (!it.mine) return false;
+  if (currentTab === "archived") return it.archived;
+  if (it.archived) return false;
+  if (currentTab === "dm") return it.type === "dm";
+  if (currentTab === "group") return it.type !== "dm";
+  return true;
+}
+
+function itemTag(it) {
+  if (it.type !== "dm" || !it.dm) return "";
+  const dm = it.dm, me = currentUserDoc.uid;
+  if (!it.mine) return "";
+  if (dm.status === "pending") return dm.requester === me ? `<span class="text-[10px] text-zinc-500">بانتظار الموافقة</span>` : `<span class="text-[10px] bg-amber-500 text-black font-bold px-1.5 rounded">طلب جديد</span>`;
+  if (dm.status === "declined") return `<span class="text-[10px] text-zinc-500">مرفوض</span>`;
+  if (!isOwnerMe() && isExpired(dm)) return `<span class="text-[10px] text-amber-400">انتهى الإذن</span>`;
+  return "";
+}
+
+function itemAvatar(it) {
+  if (it.type === "public") return iconAvatar("🌐");
+  if (it.type === "group") return groupAvatar(it.title);
+  return avatarHtml(it.mine ? otherOf(it.dm) : it.dm.members[0], 48);
+}
+function itemTitleHtml(it) {
+  if (it.type === "dm" && it.mine) return nameHtml(otherOf(it.dm));
+  return esc(it.title);
+}
+
+function rowHtml(it) {
+  const badges = [];
+  if (it.mention) badges.push(`<span class="bg-sky-500 text-white text-[10px] font-bold px-1.5 rounded-full">@</span>`);
+  if (it.unread) badges.push(`<span class="bg-amber-500 text-black text-[10px] font-bold min-w-[1.1rem] h-[1.1rem] px-1 rounded-full flex items-center justify-center">●</span>`);
+  const tag = itemTag(it);
+  return `
+  <div data-chat="${esc(it.id)}" data-type="${it.type}" class="chat-row flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-zinc-900 border-b border-zinc-900 ${currentRoomId === it.id ? "active" : ""}">
+    ${itemAvatar(it)}
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-1">
+        <span class="truncate ${it.unread ? "font-bold" : "font-semibold"}">${itemTitleHtml(it)}</span>
+        ${it.pinned ? '<span class="text-[11px]">📌</span>' : ""}${it.muted ? '<span class="text-[11px]">🔕</span>' : ""}
+        <span class="mr-auto text-[11px] shrink-0 ${it.unread ? "text-amber-400" : "text-zinc-500"}">${fmtListTime(it.lastAt)}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="truncate text-sm ${it.unread ? "text-zinc-200" : "text-zinc-500"}">${esc(it.preview) || "&nbsp;"}</span>
+        <span class="mr-auto flex items-center gap-1 shrink-0">${badges.join("")}${tag}</span>
+      </div>
+    </div>
+    <button data-menu class="text-zinc-500 hover:text-white px-1.5 text-lg leading-none">⋮</button>
+  </div>`;
+}
+
+function peopleCandidates() {
+  const me = currentUserDoc.uid;
+  const hasDm = (uid) => dmsCache.some((d) => isDmMember(d) && d.members.includes(uid));
+  return Object.entries(directory)
+    .filter(([uid, d]) => uid !== me && (isOwnerMe() || d.discoverable !== false || hasDm(uid)))
+    .map(([uid, d]) => ({ uid, ...d }));
+}
+
+function personRow(p) {
+  return `
+  <div data-person="${esc(p.uid)}" class="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-zinc-900 border-b border-zinc-900">
+    ${avatarHtml(p.uid, 44)}
+    <div class="flex-1 min-w-0">
+      <div class="truncate font-semibold">${nameHtml(p.uid)}${p.discoverable === false ? ' <span class="text-[10px] text-zinc-500">(مخفي)</span>' : ""}</div>
+      <div class="truncate text-xs text-zinc-500">${esc(p.about || "")}</div>
+    </div>
+  </div>`;
+}
+
+function renderChatList() {
+  const el = $("chat-list");
+  if (!el || !currentUserDoc) return;
+  const items = buildItems();
+  notifyChanges(items);
+  updateTabs(items);
+  const q = normalize(searchQuery);
+  let html = "";
+
+  if (q) {
+    const hits = items.filter((it) => it.mine && (normalize(it.title).includes(q) || (it.type === "dm" && normalize(realName(otherOf(it.dm))).includes(q))));
+    if (hits.length) html += `<div class="px-3 pt-3 pb-1 text-xs text-zinc-500 font-bold">المحادثات والجروبات</div>` + hits.sort(sortItems).map(rowHtml).join("");
+    const people = peopleCandidates().filter((p) => normalize(p.name).includes(q) || normalize(nameOf(p.uid)).includes(q) || normalize(p.about).includes(q));
+    if (people.length) html += `<div class="px-3 pt-3 pb-1 text-xs text-zinc-500 font-bold">ناس</div>` + people.map(personRow).join("");
+    if (!html) html = `<div class="p-6 text-center text-zinc-500 text-sm">مفيش نتايج</div>`;
+  } else {
+    if ((currentTab === "all" || currentTab === "group") && groupInvites.length) {
+      html += `<div class="px-3 pt-3 pb-1 text-xs text-amber-400 font-bold">دعوات للانضمام</div>`;
+      groupInvites.forEach((inv) => {
+        html += `
+        <div class="px-3 py-2.5 border-b border-zinc-900 bg-zinc-900/50">
+          <div class="text-sm mb-2"><b>${esc(nameOf(inv.from))}</b> عايزك تنضم لجروب <b class="text-amber-400">${esc(inv.groupName)}</b></div>
+          <div class="flex gap-2">
+            <button data-inv="${esc(inv.id)}" data-do="accept" class="btn btn-green">قبول</button>
+            <button data-inv="${esc(inv.id)}" data-do="decline" class="btn btn-gray">رفض</button>
+          </div>
+        </div>`;
+      });
+    }
+    const list = items.filter(inTab).sort(sortItems);
+    html += list.map(rowHtml).join("");
+    if (!list.length && !groupInvites.length) {
+      html += `<div class="p-6 text-center text-zinc-500 text-sm">${currentTab === "archived" ? "مفيش محادثات مؤرشفة" : currentTab === "supervise" ? "مفيش حاجة للإشراف" : "مفيش محادثات هنا"}</div>`;
+    }
+  }
+  el.innerHTML = html;
+
+  const unreadTotal = items.filter((i) => i.mine && i.unread && !i.archived && !i.muted).length;
+  document.title = (unreadTotal ? `(${unreadTotal}) ` : "") + "VENOM Chat";
+}
+
+function sortItems(a, b) {
+  if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+  const ai = a.dm && a.mine && a.dm.status === "pending" && a.dm.requester !== currentUserDoc.uid;
+  const bi = b.dm && b.mine && b.dm.status === "pending" && b.dm.requester !== currentUserDoc.uid;
+  if (ai !== bi) return ai ? -1 : 1;
+  return (b.lastAt || 0) - (a.lastAt || 0);
+}
+
+const TABS = [["all", "الكل"], ["dm", "خاص"], ["group", "جروبات"], ["archived", "🗄 مؤرشفة"], ["supervise", "👁 إشراف"]];
+function setupTabs() {
+  const wrap = $("tabs");
+  wrap.innerHTML = "";
+  TABS.forEach(([id, label]) => {
+    if (id === "supervise" && !isPriv()) return;
+    const b = document.createElement("button");
+    b.dataset.tab = id;
+    b.className = "btn whitespace-nowrap";
+    b.innerHTML = `<span>${label}</span><span data-dot class="hidden text-amber-400 mr-1">●</span>`;
+    b.onclick = () => { currentTab = id; renderChatList(); };
+    wrap.appendChild(b);
+  });
+}
+function updateTabs(items) {
+  document.querySelectorAll("#tabs [data-tab]").forEach((b) => {
+    const id = b.dataset.tab;
+    const active = id === currentTab;
+    b.classList.toggle("btn-gold", active);
+    b.classList.toggle("btn-gray", !active);
+    const has = items.some((it) => it.unread && !it.muted && (id === "supervise" ? false : it.mine && (id === "archived" ? it.archived : (!it.archived && (id === "all" || (id === "dm" ? it.type === "dm" : it.type !== "dm"))))));
+    b.querySelector("[data-dot]").classList.toggle("hidden", !(has && !active));
+  });
+}
+
+$("search-input").addEventListener("input", (e) => { searchQuery = e.target.value; renderChatList(); });
+
+$("chat-list").addEventListener("click", (e) => {
+  const inv = e.target.closest("[data-inv]");
+  if (inv) { handleGroupInvite(inv.dataset.inv, inv.dataset.do); return; }
+  const menu = e.target.closest("[data-menu]");
+  if (menu) { e.stopPropagation(); openChatMenu(menu.closest("[data-chat]"), menu.getBoundingClientRect()); return; }
+  const person = e.target.closest("[data-person]");
+  if (person) { $("search-input").value = ""; searchQuery = ""; startDm(person.dataset.person); return; }
+  const row = e.target.closest("[data-chat]");
+  if (row) openChat(row.dataset.chat, row.dataset.type);
+});
+$("chat-list").addEventListener("contextmenu", (e) => {
+  const row = e.target.closest("[data-chat]");
+  if (row) { e.preventDefault(); openChatMenu(row, { left: e.clientX, right: e.clientX, bottom: e.clientY, top: e.clientY }); }
+});
+let pressTimer = null;
+$("chat-list").addEventListener("touchstart", (e) => {
+  const row = e.target.closest("[data-chat]");
+  if (!row) return;
+  const t = e.touches[0];
+  pressTimer = setTimeout(() => openChatMenu(row, { left: t.clientX, right: t.clientX, bottom: t.clientY, top: t.clientY }), 550);
+}, { passive: true });
+["touchend", "touchmove", "touchcancel"].forEach((ev) => $("chat-list").addEventListener(ev, () => clearTimeout(pressTimer), { passive: true }));
+
+async function setPref(id, patch) {
+  const cur = chatPrefs[id] || {};
+  try {
+    await setDoc(doc(db, "users", currentUserDoc.uid, "chatPrefs", id), { pinned: !!cur.pinned, archived: !!cur.archived, muted: !!cur.muted, ...patch });
+  } catch (e) { showErr(e); }
+}
+
+function openChatMenu(row, rect) {
+  if (!row) return;
+  const id = row.dataset.chat, type = row.dataset.type;
+  const p = chatPrefs[id] || {};
+  const items = [
+    { label: p.pinned ? "📌 إلغاء التثبيت" : "📌 تثبيت المحادثة", fn: () => setPref(id, { pinned: !p.pinned }) },
+    { label: p.archived ? "🗄 إلغاء الأرشفة" : "🗄 أرشفة", fn: () => setPref(id, { archived: !p.archived }) },
+    { label: p.muted ? "🔔 إلغاء الكتم" : "🔕 كتم الإشعارات", fn: () => setPref(id, { muted: !p.muted }) }
+  ];
+  if (type === "dm") {
+    const dm = dmsCache.find((d) => d.id === id);
+    if (dm && isDmMember(dm)) items.push({ label: "👤 عرض الملف", fn: () => openProfile(otherOf(dm)) });
+  }
+  showMenu(items, rect);
+}
+
+/* ---------------- قايمة منبثقة عامة ---------------- */
+function showMenu(items, rect, topRow) {
+  const m = $("ctx-menu");
+  m.innerHTML = "";
+  if (topRow) m.appendChild(topRow);
+  items.forEach((it) => {
+    const b = document.createElement("button");
+    b.className = "w-full text-right px-4 py-2 text-sm hover:bg-zinc-800 " + (it.danger ? "text-red-400" : "");
+    b.innerText = it.label;
+    b.onclick = () => { hideMenu(); it.fn(); };
+    m.appendChild(b);
+  });
+  m.classList.remove("hidden");
+  const w = m.offsetWidth, h = m.offsetHeight;
+  let left = Math.min(Math.max(8, rect.left), window.innerWidth - w - 8);
+  let top = rect.bottom + 4;
+  if (top + h > window.innerHeight - 8) top = Math.max(8, rect.top - h - 4);
+  m.style.left = left + "px";
+  m.style.top = top + "px";
+}
+function hideMenu() { $("ctx-menu").classList.add("hidden"); }
+document.addEventListener("pointerdown", (e) => { if (!e.target.closest("#ctx-menu")) hideMenu(); });
+
+/* =========================================================
+   فتح محادثة
+   ========================================================= */
+function openChat(id, type) {
+  currentRoomId = id;
+  currentRoomType = type;
+  replyTo = null; editing = null; mentionMap = {};
+  $("message-input").value = "";
+  autosize();
+  updateReplyBar();
+  $("empty-state").classList.add("hidden");
+  $("chat-view").classList.remove("hidden");
+  document.body.dataset.view = "chat";
+  if (!(history.state && history.state.chat)) { try { history.pushState({ chat: true }, ""); } catch (_) {} }
+  renderChatHeader(); renderRoomBar(); renderComposerState();
+  hideEmoji();
+  loadMessages();
+  markRead(id);
+  renderChatList();
+}
+window.openChat = openChat;
+
+function closeChatUI() {
+  if (unsubMessages) { unsubMessages(); unsubMessages = null; }
+  currentRoomId = null; currentRoomType = null; lastMessages = [];
+  $("chat-view").classList.add("hidden");
+  $("empty-state").classList.remove("hidden");
+  document.body.dataset.view = "list";
+  renderChatList();
+}
+window.addEventListener("popstate", () => { if (document.body.dataset.view === "chat") closeChatUI(); });
+$("back-btn").onclick = () => { if (history.state && history.state.chat) history.back(); else closeChatUI(); };
+
+function markRead(id) {
+  const items = buildItems();
+  const it = items.find((x) => x.id === id);
+  lastRead[id] = Math.max(Date.now(), it ? it.lastAt : 0);
+  try { localStorage.setItem("venom_lr_" + currentUserDoc.uid, JSON.stringify(lastRead)); } catch (_) {}
+}
+
+function currentGroup() { return groupsCache.find((g) => g.id === currentRoomId); }
+function currentDm() { return dmsCache.find((d) => d.id === currentRoomId); }
+
+function renderChatHeader() {
+  if (!currentRoomId) return;
+  let av = "", title = "", sub = "";
+  if (currentRoomType === "public") {
+    av = iconAvatar("🌐", 42); title = esc("الجروب العام"); sub = publicOpen ? "أي حد دخل الموقع" : "🔒 مقفول حاليًا (للقراءة فقط)";
+  } else if (currentRoomType === "group") {
+    const g = currentGroup();
+    if (!g) return;
+    av = groupAvatar(g.name, 42); title = esc(g.name); sub = `${(g.members || []).length} عضو`;
+  } else {
+    const dm = currentDm();
+    if (!dm) return;
+    const mineDm = isDmMember(dm);
+    const other = mineDm ? otherOf(dm) : dm.members[0];
+    av = avatarHtml(other, 42);
+    title = mineDm ? nameHtml(other) : esc(`${nameOf(dm.members[0])} ↔ ${nameOf(dm.members[1])}`);
+    sub = mineDm ? ((directory[other] && directory[other].about) || "") : "وضع الإشراف";
+  }
+  $("ch-avatar").innerHTML = av;
+  $("ch-title").innerHTML = title;
+  $("ch-sub").innerText = sub;
+}
+function openChatInfo() {
+  if (currentRoomType === "group") openGroupInfo(currentRoomId);
+  else if (currentRoomType === "dm") { const dm = currentDm(); if (dm && isDmMember(dm)) openProfile(otherOf(dm)); }
+}
+$("ch-info").onclick = openChatInfo;
+$("ch-info-btn").onclick = openChatInfo;
+
+/* ---------------- شريط الحالة (طلبات / حظر / انتهاء الإذن) ---------------- */
+function renderRoomBar() {
+  const bar = $("room-bar");
+  if (!bar) return;
+  bar.innerHTML = "";
+  bar.classList.add("hidden");
+  if (!currentRoomId) return;
+  const say = (t, cls = "text-zinc-300") => { const s = document.createElement("span"); s.className = cls + " flex-1"; s.innerText = t; bar.appendChild(s); bar.classList.remove("hidden"); };
+  const add = (t, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.innerText = t; b.onclick = fn; bar.appendChild(b); bar.classList.remove("hidden"); };
+
+  if (currentRoomType === "public") {
+    if (!publicOpen) say(isPriv() ? "🔒 الجروب العام مقفول. إنت بس والأدمن بتكتبوا." : "🔒 الجروب العام مقفول حاليًا، للقراءة فقط.", "text-amber-400");
+    return;
+  }
+  if (currentRoomType === "group") {
+    const g = currentGroup();
+    if (g && !(g.members || []).includes(currentUserDoc.uid)) say("👁 وضع الإشراف: إنت مش عضو في الجروب ده.", "text-amber-400");
+    return;
+  }
+  const dm = currentDm();
+  if (!dm) return;
+  const me = currentUserDoc.uid;
+  if (!isDmMember(dm)) { say(`👁 وضع الإشراف: محادثة بين ${nameOf(dm.members[0])} و${nameOf(dm.members[1])} (قراءة فقط)`, "text-amber-400"); return; }
+  const other = otherOf(dm);
+
+  if (dm.status === "pending") {
+    if (dm.requester === me) { say(`بانتظار موافقة ${nameOf(other)} على طلبك.`); return; }
+    say(`${nameOf(other)} عايز يبدأ محادثة معاك.`);
+    if (isOwnerMe()) {
+      add("قبول 24 ساعة", "btn-green", () => acceptDm(dm, "day"));
+      add("⭐ مراسلة مفتوحة", "btn-gold", () => acceptDm(dm, "open"));
+    } else add("قبول", "btn-green", () => acceptDm(dm, "plain"));
+    add("رفض", "btn-gray", () => updateDoc(doc(db, "dms", dm.id), { status: "declined" }).catch(showErr));
+    add("إبلاغ", "btn-red", () => reportUser(other));
+    return;
+  }
+  if (dm.status === "declined") {
+    if (dm.requester === me) say(`${nameOf(other)} رفض الطلب.`);
+    else { say("انت رفضت الطلب ده."); add("قبول", "btn-green", () => acceptDm(dm, isOwnerMe() ? "day" : "plain")); }
+    return;
+  }
+  if (!isOwnerMe() && isExpired(dm)) {
+    say(`انتهى إذن المراسلة مع ${nameOf(other)}. لازم تطلب إذن جديد.`, "text-amber-400");
+    add("طلب إذن جديد", "btn-gold", () => updateDoc(doc(db, "dms", dm.id), { status: "pending", requester: me }).catch(showErr));
+    return;
+  }
+  if (myBlocks.has(other)) {
+    say(`إنت حاظر ${nameOf(other)}.`, "text-red-400");
+    add("إلغاء الحظر", "btn-gray", () => deleteDoc(doc(db, "blocks", me + "_" + other)).catch(showErr));
+    return;
+  }
+  if (isOwnerMe() && dm.ownerDm) {
+    if (dm.open) { say("⭐ مراسلة مفتوحة: يقدر يكلمك من غير إذن كل مرة.", "text-amber-400"); add("سحب المراسلة المفتوحة", "btn-gray", () => updateDoc(doc(db, "dms", dm.id), { open: false, until: deleteField() }).catch(showErr)); }
+    else if (dm.until && tsMs(dm.until) > Date.now()) { say("إذن مؤقت لحد " + new Date(tsMs(dm.until)).toLocaleString("ar-EG"), "text-zinc-400"); add("⭐ اجعلها مفتوحة", "btn-gold", () => updateDoc(doc(db, "dms", dm.id), { open: true }).catch(showErr)); }
+    else { say("الإذن خلص. لازم يطلب تاني.", "text-zinc-400"); add("⭐ اجعلها مفتوحة", "btn-gold", () => updateDoc(doc(db, "dms", dm.id), { open: true }).catch(showErr)); }
+  }
+}
+
+function acceptDm(dm, mode) {
+  const patch = { status: "accepted" };
+  if (mode === "open") patch.open = true;
+  if (mode === "day") patch.until = Timestamp.fromMillis(Date.now() + 24 * 3600 * 1000);
+  return updateDoc(doc(db, "dms", dm.id), patch).catch(showErr);
+}
+
+/* =========================================================
+   الرسائل
+   ========================================================= */
+function loadMessages() {
+  if (unsubMessages) unsubMessages();
+  lastMessages = [];
+  scrollNext = true;
+  renderMessages();
+  const rid = currentRoomId;
+  const q = query(collection(db, "rooms", rid, "messages"), orderBy("createdAt", "desc"), limit(150));
+  unsubMessages = onSnapshot(q, (snap) => {
+    if (rid !== currentRoomId) return;
+    lastMessages = snap.docs.map((d) => ({ id: d.id, ...d.data({ serverTimestamps: "estimate" }) })).reverse();
+    renderMessages();
+    markRead(rid);
+  }, (err) => {
+    console.error(err);
+    $("chat-messages").innerHTML = `<p class="text-red-400 text-sm p-3">مقدرتش أحمّل الرسائل: ${esc(err.code || err.message)}</p>`;
+  });
+}
+
+function renderMessages() {
+  const box = $("chat-messages");
+  if (!box) return;
+  const stick = scrollNext || (box.scrollHeight - box.scrollTop - box.clientHeight < 140);
+  box.innerHTML = "";
+  let lastDay = "";
+  lastMessages.forEach((m) => {
+    const t = tsMs(m.createdAt);
+    const day = t ? new Date(t).toDateString() : "";
+    if (day && day !== lastDay) {
+      lastDay = day;
+      const sep = document.createElement("div");
+      sep.className = "text-center my-2";
+      sep.innerHTML = `<span class="text-[11px] bg-zinc-900 text-zinc-400 px-3 py-1 rounded-full">${daySepLabel(t)}</span>`;
+      box.appendChild(sep);
+    }
+    box.appendChild(buildMsg(m));
+  });
+  if (stick) box.scrollTop = box.scrollHeight;
+  if (lastMessages.length) scrollNext = false;
+}
+
+function formatText(m, kind) {
+  let html = esc(m.text);
+  const mc = kind === "gold" ? "underline font-bold" : kind === "mine" ? "text-sky-300 font-bold" : "text-sky-700 font-bold";
+  (m.mentions || []).forEach((x) => {
+    if (!x || !x.name) return;
+    const token = "@" + esc(x.name);
+    html = html.split(token).join(`<span class="${mc}">${token}</span>`);
+  });
+  html = html.replace(/(https?:\/\/[^\s<]+)/g, (u) => `<a href="${u}" target="_blank" rel="noopener noreferrer" class="underline">${u}</a>`);
+  return html;
+}
+
+function buildMsg(m) {
+  const me = currentUserDoc.uid;
+  const mine = m.senderUid === me;
+  const owner = isOwnerUid(m.senderUid) || (mine && isOwnerMe());
+  const deleted = !!m.deleted;
+  const sticker = m.kind === "sticker" && !deleted;
+  const mentioned = (m.mentions || []).some((x) => x && x.uid === me);
+  const kind = owner ? "gold" : mine ? "mine" : "other";
+
+  const row = document.createElement("div");
+  row.className = "flex gap-2 items-end fade-in " + (mine ? "justify-start" : "justify-end");
+
+  let palette;
+  if (deleted) palette = "bg-zinc-900 text-zinc-500 italic";
+  else if (sticker) palette = "";
+  else if (owner) palette = "bg-gradient-to-br from-amber-200 via-amber-400 to-yellow-500 text-black ring-1 ring-white/70 shadow-[0_0_18px_rgba(245,158,11,.25)]";
+  else if (mine) palette = "bg-zinc-950 text-white ring-1 ring-zinc-500";
+  else palette = "bg-white text-zinc-900";
+
+  const col = document.createElement("div");
+  col.className = "flex flex-col max-w-[82%] md:max-w-[62%] " + (mine ? "items-start" : "items-end");
+
+  const b = document.createElement("div");
+  b.className = `rounded-2xl px-3 py-1.5 cursor-pointer ${palette} ${mentioned && !deleted ? "outline outline-2 outline-sky-400" : ""}`;
+  b.dataset.mid = m.id;
+
+  let inner = "";
+  if (!mine && currentRoomType !== "dm") {
+    const nameCls = owner ? "" : "text-zinc-500";
+    inner += `<div class="text-xs mb-0.5 ${nameCls}">${nameHtml(m.senderUid, owner)}</div>`;
+  }
+  if (deleted) {
+    inner += `<div class="text-sm">🚫 تم حذف الرسالة</div>`;
+  } else {
+    if (m.replyTo) {
+      const q = lastMessages.find((x) => x.id === m.replyTo);
+      const qb = kind === "gold" ? "bg-black/10 border-black/40" : kind === "mine" ? "bg-white/10 border-white/50" : "bg-zinc-100 border-zinc-400";
+      inner += `<div class="${qb} border-r-4 rounded px-2 py-1 mb-1 text-xs opacity-90" data-goto="${esc(m.replyTo)}">
+        <div class="font-bold">${q ? esc(nameOf(q.senderUid)) : "رسالة"}</div>
+        <div class="truncate">${q ? (q.deleted ? "🚫 رسالة محذوفة" : esc(q.kind === "sticker" ? "ملصق " + q.text : q.text.slice(0, 80))) : "رسالة قديمة"}</div></div>`;
+    }
+    if (sticker) inner += `<div class="text-6xl leading-none py-1">${esc(m.text)}</div>`;
+    else inner += `<div class="msg-text text-[15px]">${formatText(m, kind)}</div>`;
+  }
+  const t = tsMs(m.createdAt);
+  const tcls = sticker ? "text-zinc-500" : "opacity-60";
+  inner += `<div class="flex items-center gap-1 justify-end text-[10px] ${tcls} mt-0.5">${m.edited && !deleted ? "معدلة · " : ""}${fmtTime(t)}</div>`;
+  b.innerHTML = inner;
+  b.onclick = (e) => {
+    if (e.target.closest("a")) return;
+    const g = e.target.closest("[data-goto]");
+    if (g) { const el = $("chat-messages").querySelector(`[data-mid="${CSS.escape(g.dataset.goto)}"]`); if (el) { el.scrollIntoView({ block: "center", behavior: "smooth" }); el.classList.add("outline", "outline-2", "outline-amber-400"); setTimeout(() => el.classList.remove("outline", "outline-2", "outline-amber-400"), 1400); } return; }
+    openMsgMenu(m, b);
+  };
+  col.appendChild(b);
+
+  // التفاعلات
+  const rx = m.reactions || {};
+  const counts = {};
+  Object.values(rx).forEach((e) => { counts[e] = (counts[e] || 0) + 1; });
+  if (Object.keys(counts).length && !deleted) {
+    const r = document.createElement("div");
+    r.className = "flex gap-1 -mt-1 mx-2 flex-wrap";
+    Object.entries(counts).forEach(([e, n]) => {
+      const c = document.createElement("button");
+      c.className = "text-xs px-1.5 py-0.5 rounded-full border " + (rx[me] === e ? "bg-amber-500/30 border-amber-400" : "bg-zinc-900 border-zinc-700");
+      c.innerText = n > 1 ? `${e} ${n}` : e;
+      c.onclick = () => toggleReaction(m, e);
+      r.appendChild(c);
+    });
+    col.appendChild(r);
+  }
+
+  if (mine) row.appendChild(col);
+  else { row.appendChild(col); const av = document.createElement("div"); av.className = "shrink-0 mb-1"; av.innerHTML = avatarHtml(m.senderUid, 30); row.appendChild(av); }
+  return row;
+}
+
+const QUICK_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
+function toggleReaction(m, emoji) {
+  const me = currentUserDoc.uid;
+  const ref = doc(db, "rooms", currentRoomId, "messages", m.id);
+  const has = (m.reactions || {})[me] === emoji;
+  updateDoc(ref, { [`reactions.${me}`]: has ? deleteField() : emoji }).catch(showErr);
+}
+
+function openMsgMenu(m, anchor) {
+  const me = currentUserDoc.uid;
+  const mine = m.senderUid === me;
+  const deleted = !!m.deleted;
+  const row = document.createElement("div");
+  row.className = "flex justify-around px-2 py-2 border-b border-zinc-800 text-xl";
+  if (!deleted) QUICK_REACTIONS.forEach((e) => {
+    const b = document.createElement("button");
+    b.innerText = e; b.className = "hover:scale-125 transition";
+    b.onclick = () => { hideMenu(); toggleReaction(m, e); };
+    row.appendChild(b);
+  });
+  const items = [];
+  if (!deleted && canSendNow().ok) items.push({ label: "↩ رد", fn: () => setReply(m) });
+  if (!deleted && m.kind !== "sticker") items.push({ label: "📋 نسخ", fn: () => navigator.clipboard && navigator.clipboard.writeText(m.text).then(() => toast("اتنسخت")) });
+  if (mine && !deleted && m.kind !== "sticker" && canSendNow().ok) items.push({ label: "✎ تعديل", fn: () => startEdit(m) });
+  if (!deleted && (mine || isPriv())) items.push({ label: "🗑 حذف", danger: true, fn: () => { if (confirm("تحذف الرسالة؟")) updateDoc(doc(db, "rooms", currentRoomId, "messages", m.id), { deleted: true, text: "" }).catch(showErr); } });
+  if (!mine && !deleted) items.push({ label: "⚑ إبلاغ عن الشخص", danger: true, fn: () => reportUser(m.senderUid) });
+  if (!items.length && deleted) return;
+  showMenu(items, anchor.getBoundingClientRect(), deleted ? null : row);
+}
+
+/* ---------------- الإرسال ---------------- */
+function canSendNow() {
+  if (!currentRoomId) return { ok: false, ph: "" };
+  const me = currentUserDoc.uid;
+  if (currentRoomType === "public") {
+    if (!publicOpen && !isPriv()) return { ok: false, ph: "الجروب العام مقفول حاليًا" };
+    return { ok: true };
+  }
+  if (currentRoomType === "group") {
+    const g = currentGroup();
+    if (!g) return { ok: false, ph: "" };
+    if (!(g.members || []).includes(me) && !isOwnerMe()) return { ok: false, ph: "وضع الإشراف (قراءة فقط)" };
+    return { ok: true };
+  }
+  const dm = currentDm();
+  if (!dm) return { ok: false, ph: "" };
+  if (!isDmMember(dm)) return { ok: false, ph: "وضع الإشراف (قراءة فقط)" };
+  if (dm.status === "pending") return { ok: false, ph: dm.requester === me ? "بانتظار الموافقة" : "اقبل الطلب الأول" };
+  if (dm.status === "declined") return { ok: false, ph: "المحادثة مش متاحة" };
+  if (!isOwnerMe() && isExpired(dm)) return { ok: false, ph: "انتهى الإذن. اطلب إذن جديد" };
+  if (myBlocks.has(otherOf(dm))) return { ok: false, ph: "إنت حاظر الشخص ده" };
+  return { ok: true };
+}
+
+function renderComposerState() {
+  const st = canSendNow();
+  const inp = $("message-input");
+  inp.disabled = !st.ok;
+  inp.placeholder = st.ok ? "اكتب رسالتك هنا..." : (st.ph || "");
+  $("send-btn").disabled = !st.ok;
+  $("send-btn").style.opacity = st.ok ? "1" : ".4";
+  $("emoji-btn").style.opacity = st.ok ? "1" : ".4";
+}
+
+function autosize() {
+  const t = $("message-input");
+  t.style.height = "auto";
+  t.style.height = Math.min(t.scrollHeight, 128) + "px";
+}
+
+function parentRef() {
+  if (currentRoomType === "public") return doc(db, "rooms", "general");
+  if (currentRoomType === "group") return doc(db, "groups", currentRoomId);
+  return doc(db, "dms", currentRoomId);
+}
+
+async function sendMessage(kind, stickerEmoji) {
+  if (!canSendNow().ok) return;
+  const inp = $("message-input");
+  const me = currentUserDoc.uid;
+
+  // وضع التعديل
+  if (editing && kind !== "sticker") {
+    const text = inp.value.trim();
+    if (!text) return;
+    const ref = doc(db, "rooms", currentRoomId, "messages", editing.id);
+    try { await updateDoc(ref, { text, edited: true }); } catch (e) { showErr(e); return; }
+    editing = null; inp.value = ""; autosize(); updateReplyBar();
+    return;
+  }
+
+  const text = kind === "sticker" ? stickerEmoji : inp.value.trim();
+  if (!text) return;
+  const msg = { text: text.slice(0, 2999), senderUid: me, senderName: currentUserDoc.name, createdAt: serverTimestamp() };
+  if (kind === "sticker") msg.kind = "sticker";
+  if (replyTo) msg.replyTo = replyTo.id;
+  let mentions = [];
+  if (kind !== "sticker") {
+    mentions = Object.entries(mentionMap).filter(([n]) => text.includes("@" + n)).map(([n, uid]) => ({ uid, name: n })).slice(0, 10);
+    if (mentions.length) msg.mentions = mentions;
+  }
+  const preview = kind === "sticker" ? "ملصق " + text : text.slice(0, 100);
+  const last = { lastMessageAt: serverTimestamp(), lastMessage: preview, lastSenderUid: me, lastMentions: mentions.map((x) => x.uid) };
+
+  try {
+    const batch = writeBatch(db);
+    batch.set(doc(collection(db, "rooms", currentRoomId, "messages")), msg);
+    if (currentRoomType === "public") batch.set(parentRef(), last, { merge: true });
+    else batch.update(parentRef(), last);
+    await batch.commit();
+  } catch (e) {
+    alert(e.code === "permission-denied" ? "الرسالة متبعتتش: المحادثة مش متاحة دلوقتي (مقفولة أو محتاجة إذن)." : "الرسالة متبعتتش: " + (e.code || e.message));
+    return;
+  }
+  if (kind !== "sticker") { inp.value = ""; autosize(); }
+  replyTo = null; mentionMap = {}; updateReplyBar(); hideMention();
+  scrollNext = true;
+}
+
+$("send-btn").onclick = () => sendMessage();
+$("message-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendMessage(); }
+  if (e.key === "Escape") { cancelReplyEdit(); hideMention(); hideEmoji(); }
+});
+$("message-input").addEventListener("input", () => { autosize(); detectMention(); });
+$("message-input").addEventListener("click", detectMention);
+
+/* ---------------- رد / تعديل ---------------- */
+function setReply(m) {
+  editing = null;
+  replyTo = { id: m.id, uid: m.senderUid, text: m.kind === "sticker" ? "ملصق " + m.text : m.text };
+  updateReplyBar(); $("message-input").focus();
+}
+function startEdit(m) {
+  replyTo = null;
+  editing = m;
+  $("message-input").value = m.text;
+  autosize(); updateReplyBar(); $("message-input").focus();
+}
+function cancelReplyEdit() {
+  const wasEdit = !!editing;
+  replyTo = null; editing = null;
+  if (wasEdit) { $("message-input").value = ""; autosize(); }
+  updateReplyBar();
+}
+function updateReplyBar() {
+  const bar = $("reply-bar");
+  if (editing) { bar.classList.remove("hidden"); $("reply-title").innerText = "تعديل الرسالة"; $("reply-text").innerText = editing.text; }
+  else if (replyTo) { bar.classList.remove("hidden"); $("reply-title").innerText = "ردًا على " + nameOf(replyTo.uid); $("reply-text").innerText = replyTo.text; }
+  else bar.classList.add("hidden");
+}
+$("reply-cancel").onclick = cancelReplyEdit;
+
+/* ---------------- المنشن (@) ---------------- */
+function mentionCandidates() {
+  const me = currentUserDoc.uid;
+  let uids = [];
+  if (currentRoomType === "dm") { const dm = currentDm(); if (dm && isDmMember(dm)) uids = [otherOf(dm)]; }
+  else if (currentRoomType === "group") { const g = currentGroup(); uids = (g && g.members || []).filter((u) => u !== me); }
+  else {
+    const set = new Set(peopleCandidates().map((p) => p.uid));
+    lastMessages.forEach((m) => { if (m.senderUid !== me) set.add(m.senderUid); });
+    uids = [...set];
+  }
+  return uids.filter((u) => directory[u]);
+}
+function detectMention() {
+  const ta = $("message-input");
+  const pos = ta.selectionStart;
+  const before = ta.value.slice(0, pos);
+  const m = before.match(/(^|\s)@([^\s@]{0,20})$/);
+  if (!m || ta.disabled) { hideMention(); return; }
+  const q = normalize(m[2]);
+  const cands = mentionCandidates().filter((u) => normalize(realName(u)).includes(q) || normalize(nameOf(u)).includes(q)).slice(0, 6);
+  if (!cands.length) { hideMention(); return; }
+  const box = $("mention-box");
+  box.innerHTML = "";
+  const start = m.index + m[1].length;
+  cands.forEach((u) => {
+    const b = document.createElement("button");
+    b.className = "w-full flex items-center gap-2 px-3 py-2 hover:bg-zinc-800 text-right";
+    b.innerHTML = `${avatarHtml(u, 28)}<span class="text-sm">${nameHtml(u)}</span>`;
+    b.onmousedown = (ev) => ev.preventDefault();
+    b.onclick = () => {
+      const name = realName(u);
+      ta.value = ta.value.slice(0, start) + "@" + name + " " + ta.value.slice(pos);
+      mentionMap[name] = u;
+      const np = start + name.length + 2;
+      ta.focus(); ta.setSelectionRange(np, np);
+      hideMention(); autosize();
+    };
+    box.appendChild(b);
+  });
+  box.classList.remove("hidden");
+}
+function hideMention() { $("mention-box").classList.add("hidden"); }
+
+/* ---------------- إيموجي وملصقات ---------------- */
+const EMOJIS = "😀 😁 😂 🤣 😊 😍 😘 😎 🤔 😢 😭 😡 😴 🥳 🤯 😱 🙄 😏 😇 🤗 😉 😋 🥺 😤 🤝 👍 👎 👏 🙏 💪 👌 ✌️ 🤞 👋 🙌 ❤️ 🧡 💛 💚 💙 💜 🖤 💔 🔥 ✨ ⭐ 🌹 🎉 🎁 💯 ✅ ❌ ⚡ 💎 👑 🐍 🕷️ 🌙 ☀️ 🍕 ☕ ⚽ 🎮 📱 💻 🚀 🎧 📸 🏆".split(" ");
+const STICKERS = [["👑", "ملك"], ["🔥", "نار"], ["😎", "كول"], ["🥰", "حب"], ["😂", "ضحك"], ["🤝", "اتفاق"], ["💀", "ميت"], ["🐍", "فينوم"], ["🕷️", "عنكبوت"], ["🖤", "قلب"], ["⚡", "برق"], ["💎", "ألماس"], ["🏴‍☠️", "قراصنة"], ["🎉", "احتفال"], ["😭", "بكاء"], ["🙏", "شكرًا"], ["👍", "تمام"], ["🤯", "صدمة"], ["😴", "نعسان"], ["😡", "غضب"], ["🥳", "حفلة"], ["🤔", "تفكير"], ["🙈", "خجل"], ["💪", "قوة"]];
+let epTab = "emoji";
+function renderEmojiPanel() {
+  const body = $("ep-body");
+  body.innerHTML = "";
+  $("ep-emoji").className = "btn " + (epTab === "emoji" ? "btn-gold" : "btn-gray");
+  $("ep-stickers").className = "btn " + (epTab === "stickers" ? "btn-gold" : "btn-gray");
+  body.style.gridTemplateColumns = epTab === "emoji" ? "repeat(auto-fill, minmax(2.2rem, 1fr))" : "repeat(auto-fill, minmax(4.2rem, 1fr))";
+  if (epTab === "emoji") {
+    EMOJIS.forEach((e) => {
+      const b = document.createElement("button");
+      b.className = "text-2xl hover:bg-zinc-800 rounded-lg py-1";
+      b.innerText = e;
+      b.onclick = () => { const ta = $("message-input"); const p = ta.selectionStart || ta.value.length; ta.value = ta.value.slice(0, p) + e + ta.value.slice(p); ta.focus(); ta.setSelectionRange(p + e.length, p + e.length); autosize(); };
+      body.appendChild(b);
+    });
+  } else {
+    STICKERS.forEach(([e, n]) => {
+      const b = document.createElement("button");
+      b.className = "flex flex-col items-center hover:bg-zinc-800 rounded-xl py-1";
+      b.innerHTML = `<span class="text-4xl leading-none">${e}</span><span class="text-[10px] text-zinc-500 mt-1">${n}</span>`;
+      b.onclick = () => { hideEmoji(); sendMessage("sticker", e); };
+      body.appendChild(b);
+    });
+  }
+}
+function hideEmoji() { $("emoji-panel").classList.add("hidden"); }
+$("emoji-btn").onclick = () => {
+  if (!canSendNow().ok) return;
+  const p = $("emoji-panel");
+  if (p.classList.contains("hidden")) { renderEmojiPanel(); p.classList.remove("hidden"); } else p.classList.add("hidden");
+};
+$("ep-emoji").onclick = () => { epTab = "emoji"; renderEmojiPanel(); };
+$("ep-stickers").onclick = () => { epTab = "stickers"; renderEmojiPanel(); };
+
+/* =========================================================
+   إشعارات داخل التطبيق
+   ========================================================= */
+function notifyChanges(items) {
+  const me = currentUserDoc.uid;
+  items.forEach((it) => {
+    if (!it.mine) return;
+    const prev = seenLast[it.id];
+    if (prev === undefined) { seenLast[it.id] = it.lastAt; return; }
+    if (it.lastAt > prev) {
+      seenLast[it.id] = it.lastAt;
+      if (!it.lastSender || it.lastSender === me || it.muted || it.archived) return;
+      const viewing = currentRoomId === it.id && !document.hidden;
+      if (viewing) return;
+      const title = it.type === "dm" ? nameOf(it.lastSender) : `${nameOf(it.lastSender)} في ${it.title}`;
+      const body = it.mention ? `ذكرك: ${(it.meta.lastMessage || "")}` : (it.meta.lastMessage || "");
+      toast(`${it.mention ? "@ " : ""}${title}: ${body}`.slice(0, 120));
+      if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+        try { new Notification(title, { body, icon: "icon-192.png", tag: it.id }); } catch (_) {}
+      }
+    }
+  });
+}
+
+/* =========================================================
+   رسالة خاصة جديدة
+   ========================================================= */
+$("new-btn").onclick = (e) => {
+  const r = e.currentTarget.getBoundingClientRect();
+  showMenu([
+    { label: "💬 رسالة خاصة", fn: openNewDm },
+    { label: "👥 جروب جديد", fn: () => { $("new-group-name").value = ""; openPanel("new-group"); } }
+  ], r);
+};
+
+function openNewDm() {
+  $("dm-hint").innerText = isOwnerMe()
+    ? "كرئيس تقدر تبدأ محادثة مع أي حد من غير موافقته."
+    : "الشخص التاني لازم يوافق على طلبك قبل ما تقدروا تتكلموا.";
+  $("ndm-search").value = "";
+  renderNewDmList();
+  openPanel("new-dm");
+}
+function renderNewDmList() {
+  const q = normalize($("ndm-search").value);
+  const el = $("dm-users-list");
+  const people = peopleCandidates().filter((p) => !q || normalize(p.name).includes(q) || normalize(nameOf(p.uid)).includes(q));
+  el.innerHTML = people.length ? people.map(personRow).join("") : `<p class="text-zinc-500 text-sm p-2">مفيش نتايج.</p>`;
+}
+$("ndm-search").addEventListener("input", renderNewDmList);
+$("dm-users-list").addEventListener("click", (e) => {
+  const p = e.target.closest("[data-person]");
+  if (p) { closePanel("new-dm"); startDm(p.dataset.person); }
+});
+
+async function startDm(otherUid) {
+  const me = currentUserDoc.uid;
+  const id = dmIdFor(me, otherUid);
+  if (!dmsCache.find((d) => d.id === id)) {
+    const members = [me, otherUid].sort();
+    const owner = isOwnerMe();
+    try {
+      await setDoc(doc(db, "dms", id), {
+        members, requester: me,
+        status: owner ? "accepted" : "pending",
+        ownerDm: owner || isOwnerUid(otherUid),
+        open: owner,
+        createdAt: serverTimestamp()
+      });
+    } catch (e) { alert("مقدرتش أبدأ المحادثة دي: " + (e.code || e.message)); return; }
+  }
+  openChat(id, "dm");
+}
+window.startDm = startDm;
+
+/* =========================================================
+   الجروبات
+   ========================================================= */
+window.createGroup = async function () {
+  const name = $("new-group-name").value.trim().slice(0, 60);
+  if (!name) { alert("اكتب اسم الجروب"); return; }
+  const me = currentUserDoc.uid;
+  try {
+    const ref = await addDoc(collection(db, "groups"), {
+      name, status: "approved", members: [me], admins: [me], formerMembers: [], createdBy: me, createdAt: serverTimestamp()
+    });
+    closePanel("new-group");
+    setTimeout(() => openChat(ref.id, "group"), 250);
+  } catch (e) { alert("معرفتش أعمل الجروب: " + (e.code || e.message)); }
+};
+
+async function handleGroupInvite(invId, action) {
+  const inv = groupInvites.find((i) => i.id === invId);
+  if (!inv) return;
+  const me = currentUserDoc.uid;
+  try {
+    if (action === "accept") {
+      const batch = writeBatch(db);
+      batch.update(doc(db, "groupInvites", invId), { status: "accepted" });
+      batch.update(doc(db, "groups", inv.groupId), { members: arrayUnion(me) });
+      await batch.commit();
+      toast("انضميت للجروب");
+    } else {
+      await updateDoc(doc(db, "groupInvites", invId), { status: "declined" });
+    }
+  } catch (e) { showErr(e); }
+}
+
+window.openGroupInfo = function (id) {
+  giGroupId = id; giQuery = "";
+  $("gi-search").value = "";
+  renderGroupInfo();
+  openPanel("group-info");
+};
+$("gi-search").addEventListener("input", (e) => { giQuery = normalize(e.target.value); renderGroupInfo(); });
+
+function renderGroupInfo() {
+  const g = groupsCache.find((x) => x.id === giGroupId);
+  if (!g) { closePanel("group-info"); return; }
+  const me = currentUserDoc.uid, owner = isOwnerMe();
+  const members = g.members || [], admins = g.admins || [], former = g.formerMembers || [];
+  const iMember = members.includes(me), iAdmin = admins.includes(me);
+  $("gi-title").innerText = "# " + g.name;
+
+  const act = $("gi-actions");
+  act.innerHTML = "";
+  const mkb = (t, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.innerText = t; b.onclick = fn; act.appendChild(b); };
+  if (!iMember && owner) mkb("انضم كأدمن", "btn-gold", () => updateDoc(doc(db, "groups", g.id), { members: arrayUnion(me), admins: arrayUnion(me) }).catch(showErr));
+  if (iMember) mkb("خروج من الجروب", "btn-red", () => {
+    if (!confirm("تخرج من الجروب؟ مش هتقدر ترجع غير بدعوة.")) return;
+    updateDoc(doc(db, "groups", g.id), { members: arrayRemove(me), admins: arrayRemove(me), formerMembers: arrayUnion(me) })
+      .then(() => { closePanel("group-info"); if (currentRoomId === g.id) closeChatUI(); })
+      .catch(showErr);
+  });
+
+  const ml = $("gi-members");
+  ml.innerHTML = "";
+  members.forEach((uid) => {
+    const row = document.createElement("div");
+    row.className = "flex items-center gap-2 bg-black rounded-xl px-2 py-1.5 border border-zinc-800";
+    row.innerHTML = `${avatarHtml(uid, 34)}<div class="flex-1 min-w-0 truncate text-sm">${nameHtml(uid)} ${admins.includes(uid) ? '<span class="text-[10px] text-amber-400">أدمن</span>' : ""}</div>`;
+    if (uid !== me) {
+      const dmb = document.createElement("button");
+      dmb.className = "btn btn-gray !px-2"; dmb.innerText = "💬";
+      dmb.onclick = () => { closePanel("group-info"); startDm(uid); };
+      row.appendChild(dmb);
+      const canRemove = owner || (iAdmin && !admins.includes(uid));
+      if (canRemove) {
+        const rb = document.createElement("button");
+        rb.className = "btn btn-red !px-2"; rb.innerText = "إزالة";
+        rb.onclick = () => {
+          if (!confirm("تشيل " + nameOf(uid) + " من الجروب؟")) return;
+          const patch = owner ? { members: arrayRemove(uid), admins: arrayRemove(uid), formerMembers: arrayUnion(uid) } : { members: arrayRemove(uid), formerMembers: arrayUnion(uid) };
+          updateDoc(doc(db, "groups", g.id), patch).catch(showErr);
+        };
+        row.appendChild(rb);
+      }
+    }
+    ml.appendChild(row);
+  });
+
+  const canAdd = iAdmin || owner;
+  $("gi-add-section").classList.toggle("hidden", !canAdd);
+  const cl = $("gi-candidates");
+  cl.innerHTML = "";
+  if (!canAdd) return;
+  const chatted = (uid) => dmsCache.some((d) => d.status === "accepted" && isDmMember(d) && d.members.includes(uid));
+  const cands = Object.entries(directory)
+    .filter(([uid, d]) => uid !== me && !members.includes(uid) && (owner || d.discoverable !== false || chatted(uid)))
+    .filter(([uid]) => !giQuery || normalize(realName(uid)).includes(giQuery) || normalize(nameOf(uid)).includes(giQuery));
+  if (!cands.length) cl.innerHTML = `<p class="text-zinc-500 text-sm">مفيش حد متاح للإضافة.</p>`;
+  cands.forEach(([uid]) => {
+    const direct = owner || (chatted(uid) && !former.includes(uid));
+    const row = document.createElement("div");
+    row.className = "flex items-center gap-2 bg-black rounded-xl px-2 py-1.5 border border-zinc-800";
+    row.innerHTML = `${avatarHtml(uid, 34)}<div class="flex-1 min-w-0 truncate text-sm">${nameHtml(uid)}${former.includes(uid) ? ' <span class="text-[10px] text-zinc-500">(خرج قبل كده)</span>' : ""}</div>`;
+    const b = document.createElement("button");
+    b.className = "btn " + (direct ? "btn-green" : "btn-gold");
+    b.innerText = direct ? "إضافة" : "إرسال دعوة";
+    b.onclick = direct
+      ? () => updateDoc(doc(db, "groups", g.id), { members: arrayUnion(uid) }).catch(showErr)
+      : () => inviteToGroup(g, uid);
+    row.appendChild(b);
+    cl.appendChild(row);
+  });
+}
+
+async function inviteToGroup(g, uid) {
+  const id = g.id + "_" + uid;
+  const data = { groupId: g.id, groupName: g.name, from: currentUserDoc.uid, to: uid, status: "pending", createdAt: serverTimestamp() };
+  try { await setDoc(doc(db, "groupInvites", id), data); toast("اتبعتت الدعوة"); }
+  catch (e) {
+    try { await updateDoc(doc(db, "groupInvites", id), { status: "pending" }); toast("اتبعتت الدعوة"); }
+    catch (e2) { showErr(e2); }
+  }
+}
+
+/* =========================================================
+   الملف الشخصي (شخص تاني)
+   ========================================================= */
+window.openProfile = function (uid) {
+  if (uid === currentUserDoc.uid) { openSettings(); return; }
+  const d = directory[uid] || {};
+  const me = currentUserDoc.uid;
+  const dm = dmsCache.find((x) => x.id === dmIdFor(me, uid));
+  const talked = !!(dm && dm.status === "accepted");
+  const phone = isPriv() ? ((usersCache.find((u) => u.id === uid) || {}).phone || "") : "";
+  const body = $("profile-body");
+  body.innerHTML = `
+    <div class="flex flex-col items-center text-center mb-4">
+      ${avatarHtml(uid, 96)}
+      <div class="text-xl font-bold mt-3">${nameHtml(uid)}</div>
+      ${myNicknames[uid] ? `<div class="text-xs text-zinc-500">الاسم الأصلي: ${esc(realName(uid))}</div>` : ""}
+      <div class="text-sm text-zinc-400 mt-1">${esc(d.about || "")}</div>
+      ${phone ? `<div class="text-sm text-zinc-300 mt-1" dir="ltr">📞 ${esc(phone)}</div>` : ""}
+    </div>
+    <div id="profile-actions" class="grid grid-cols-2 gap-2"></div>`;
+  const acts = $("profile-actions");
+  const add = (t, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls + " !py-2.5"; b.innerText = t; b.onclick = fn; acts.appendChild(b); };
+  add("💬 رسالة", "btn-gold", () => { closePanel("profile"); startDm(uid); });
+  add(myNicknames[uid] ? "✎ تغيير التسمية" : "✎ تسمية", "btn-gray", () => {
+    if (!talked && !isOwnerMe()) { alert("تقدر تسمّي الشخص بعد ما تتكلموا (بعد قبول المحادثة)."); return; }
+    const v = prompt("اكتب اسم تفتكره بيه (محدش هيشوفه غيرك). سيبه فاضي عشان ترجع للاسم الأصلي:", myNicknames[uid] || "");
+    if (v === null) return;
+    const ref = doc(db, "users", me, "nicknames", uid);
+    (v.trim() ? setDoc(ref, { nickname: v.trim().slice(0, 40) }) : deleteDoc(ref)).then(() => closePanel("profile")).catch(showErr);
+  });
+  if (myBlocks.has(uid)) add("إلغاء الحظر", "btn-gray", () => deleteDoc(doc(db, "blocks", me + "_" + uid)).then(() => closePanel("profile")).catch(showErr));
+  else add("⛔ حظر", "btn-red", () => { if (confirm("تحظر " + nameOf(uid) + "؟")) setDoc(doc(db, "blocks", me + "_" + uid), { blocker: me, blocked: uid, createdAt: serverTimestamp() }).then(() => closePanel("profile")).catch(showErr); });
+  add("⚑ إبلاغ", "btn-red", () => { closePanel("profile"); reportUser(uid); });
+  if (isOwnerMe() && dm) add(dm.open ? "سحب المراسلة المفتوحة" : "⭐ مراسلة مفتوحة", "btn-gold", () => updateDoc(doc(db, "dms", dm.id), dm.open ? { open: false, until: deleteField() } : { open: true }).then(() => closePanel("profile")).catch(showErr));
+  openPanel("profile");
+};
+
+/* =========================================================
+   الإعدادات
+   ========================================================= */
+const ABOUT_PRESETS = ["متاح", "مشغول", "في اجتماع", "في الشغل", "نايم", "مش متاح"];
+window.openSettings = function () {
+  const me = currentUserDoc.uid, d = directory[me] || {};
+  $("settings-name").value = isOwnerMe() ? OWNER_NAME : (currentUserDoc.name || "");
+  $("settings-name").disabled = isOwnerMe();
+  $("settings-phone").value = currentUserDoc.phone || "";
+  $("settings-about").value = d.about || "";
+  $("settings-discoverable").checked = d.discoverable !== false;
+  pendingPhoto = undefined;
+  renderSettingsAvatar();
+  const pre = $("settings-about-presets");
+  pre.innerHTML = "";
+  ABOUT_PRESETS.forEach((t) => {
+    const b = document.createElement("button");
+    b.className = "btn btn-gray"; b.innerText = t;
+    b.onclick = () => { $("settings-about").value = t; };
+    pre.appendChild(b);
+  });
+  $("install-btn").classList.toggle("hidden", !deferredInstall);
+  openPanel("settings");
+};
+function renderSettingsAvatar() {
+  const me = currentUserDoc.uid, d = directory[me] || {};
+  const photo = pendingPhoto !== undefined ? pendingPhoto : d.photo;
+  if (validPhoto(photo)) $("settings-avatar").innerHTML = `<img src="${photo}" class="w-20 h-20 rounded-full object-cover">`;
+  else $("settings-avatar").innerHTML = `<span class="w-20 h-20 rounded-full bg-zinc-700 flex items-center justify-center text-3xl font-bold">${esc((currentUserDoc.name || "?").charAt(0))}</span>`;
+}
+$("settings-photo").addEventListener("change", (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const S = 160, c = document.createElement("canvas");
+      c.width = c.height = S;
+      const side = Math.min(img.width, img.height);
+      c.getContext("2d").drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, S, S);
+      pendingPhoto = c.toDataURL("image/jpeg", 0.72);
+      renderSettingsAvatar();
+    };
+    img.onerror = () => alert("الصورة مش مقروءة.");
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = "";
+});
+$("settings-photo-remove").onclick = () => { pendingPhoto = ""; renderSettingsAvatar(); };
+$("settings-save").onclick = async () => {
+  const me = currentUserDoc.uid;
+  const name = isOwnerMe() ? currentUserDoc.name : $("settings-name").value.trim().slice(0, 40);
+  const phone = $("settings-phone").value.trim().slice(0, 30);
+  const about = $("settings-about").value.trim().slice(0, 100);
+  if (!name) { alert("اكتب اسمك"); return; }
+  const dirData = { name, role: currentUserDoc.role, discoverable: $("settings-discoverable").checked, about };
+  if (pendingPhoto !== undefined) dirData.photo = pendingPhoto;
+  try {
+    const batch = writeBatch(db);
+    batch.update(doc(db, "users", me), { name, phone });
+    batch.set(doc(db, "directory", me), dirData, { merge: true });
+    await batch.commit();
+    currentUserDoc.name = name; currentUserDoc.phone = phone;
+    closePanel("settings");
+    toast("اتحفظت");
+  } catch (e) { showErr(e); }
+};
+$("notif-btn").onclick = async () => {
+  if (!("Notification" in window)) { alert("المتصفح ده مش بيدعم الإشعارات."); return; }
+  const r = await Notification.requestPermission();
+  toast(r === "granted" ? "الإشعارات اتفعّلت" : "الإشعارات مش مفعّلة");
+};
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredInstall = e; });
+$("install-btn").onclick = async () => {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  await deferredInstall.userChoice.catch(() => {});
+  deferredInstall = null;
+  $("install-btn").classList.add("hidden");
+};
+
+/* =========================================================
+   لوحة التحكم
+   ========================================================= */
+function renderPublicLock() {
+  const st = $("public-lock-state"), btn = $("public-lock-btn");
+  if (!st) return;
+  st.innerText = publicOpen ? "🟢 الجروب العام مفتوح للكتابة" : "🔒 الجروب العام مقفول (قراءة فقط)";
+  btn.innerText = publicOpen ? "قفل الجروب" : "فتح الجروب";
+  btn.className = "btn " + (publicOpen ? "btn-red" : "btn-green");
+}
+$("public-lock-btn").onclick = () => setDoc(doc(db, "settings", "public"), { open: !publicOpen }).catch(showErr);
+
+function genCode() {
+  const bytes = new Uint8Array(6);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[b % 32]).join("");
+}
+$("invite-type").addEventListener("change", (e) => $("invite-max").classList.toggle("hidden", e.target.value !== "limited"));
+$("invite-create").onclick = async () => {
+  const type = $("invite-type").value;
+  let maxUses = 0;
+  if (type === "once") maxUses = 1;
+  if (type === "limited") {
+    maxUses = parseInt($("invite-max").value, 10);
+    if (!maxUses || maxUses < 2) { alert("اكتب عدد صحيح 2 أو أكتر."); return; }
+  }
+  try { await setDoc(doc(db, "invites", genCode()), { maxUses, uses: 0, active: true, createdAt: serverTimestamp() }); }
+  catch (e) { showErr(e); }
+};
+function watchInvites() {
+  unsubs.push(onSnapshot(collection(db, "invites"), (snap) => {
+    const el = $("invites-list");
+    el.innerHTML = "";
+    if (snap.empty) { el.innerHTML = "<p class='text-zinc-500 text-sm'>مفيش أكواد. اعمل كود جديد.</p>"; return; }
+    snap.docs.sort((a, b) => tsMs(b.data().createdAt) - tsMs(a.data().createdAt)).forEach((d) => {
+      const v = d.data();
+      const exhausted = v.maxUses !== 0 && v.uses >= v.maxUses;
+      const usable = v.active && !exhausted;
+      const label = v.maxUses === 0 ? `${v.uses} استخدام (لا نهائي)` : `${v.uses} / ${v.maxUses}`;
+      const row = document.createElement("div");
+      row.className = "flex items-center bg-black p-3 rounded-xl border border-zinc-800 gap-2";
+      row.innerHTML = `<code class="font-mono ${usable ? "text-amber-400" : "text-zinc-600 line-through"}">${esc(d.id)}</code>
+        <span class="text-xs text-zinc-400 flex-1">${label}${!v.active ? " - متوقف" : exhausted ? " - خلص" : ""}</span>`;
+      const mk = (t, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls + " !px-2 !py-1"; b.innerText = t; b.onclick = fn; row.appendChild(b); return b; };
+      const cp = mk("نسخ", "btn-gray", () => navigator.clipboard.writeText(d.id).then(() => { cp.innerText = "تم"; setTimeout(() => cp.innerText = "نسخ", 1200); }));
+      mk(v.active ? "إيقاف" : "تفعيل", "btn-gray", () => updateDoc(doc(db, "invites", d.id), { active: !v.active }));
+      mk("حذف", "btn-red", () => { if (confirm("تحذف الكود ده؟")) deleteDoc(doc(db, "invites", d.id)); });
+      el.appendChild(row);
+    });
+  }));
+}
+
+function watchPendingUsers() {
+  const q = query(collection(db, "users"), where("status", "==", "pending"));
+  unsubs.push(onSnapshot(q, (snap) => {
+    const el = $("pending-users-list");
+    el.innerHTML = "";
+    if (snap.empty) { el.innerHTML = "<p class='text-zinc-500 text-sm'>لا توجد طلبات معلقة.</p>"; return; }
+    snap.forEach((d) => {
+      const u = d.data();
+      const row = document.createElement("div");
+      row.className = "flex justify-between items-center bg-black p-3 rounded-xl border border-zinc-800";
+      row.innerHTML = `<span class="text-sm">${esc(u.name)} <span class="text-zinc-500 text-xs">(${esc(u.email)})</span></span>`;
+      const b = document.createElement("button");
+      b.className = "btn btn-green"; b.innerText = "موافقة";
+      b.onclick = () => updateDoc(doc(db, "users", d.id), { status: "approved" }).catch(showErr);
+      row.appendChild(b);
+      el.appendChild(row);
+    });
+  }));
+}
+
+function watchAllUsers() {
+  unsubs.push(onSnapshot(collection(db, "users"), (snap) => {
+    usersCache = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const el = $("all-users-list");
+    el.innerHTML = "";
+    const statusAr = { approved: "مفعّل", pending: "بانتظار الموافقة", suspended: "موقوف" };
+    usersCache.forEach((u) => {
+      if (u.role === "owner") return;
+      const row = document.createElement("div");
+      row.className = "flex flex-wrap justify-between items-center bg-black p-3 rounded-xl border border-zinc-800 text-sm gap-2";
+      row.innerHTML = `<span>${esc(u.name)} <span class="text-zinc-500 text-xs">(${u.role === "admin" ? "أدمن" : "عضو"} - ${statusAr[u.status] || u.status})</span></span>`;
+      const acts = document.createElement("div");
+      acts.className = "flex gap-2";
+      if (isOwnerMe() && u.status === "approved") {
+        const b = document.createElement("button");
+        b.className = "btn btn-gray !px-2 !py-1"; b.innerText = u.role === "admin" ? "إلغاء الأدمن" : "تعيين أدمن";
+        b.onclick = () => updateDoc(doc(db, "users", u.id), { role: u.role === "admin" ? "member" : "admin" }).catch(showErr);
+        acts.appendChild(b);
+      }
+      if (u.status === "approved" || u.status === "suspended") {
+        const susp = u.status === "suspended";
+        const b = document.createElement("button");
+        b.className = "btn " + (susp ? "btn-green" : "btn-red") + " !px-2 !py-1";
+        b.innerText = susp ? "إعادة تفعيل" : "إيقاف للمراجعة";
+        b.onclick = () => updateDoc(doc(db, "users", u.id), { status: susp ? "approved" : "suspended" }).catch(showErr);
+        acts.appendChild(b);
+      }
+      row.appendChild(acts);
+      el.appendChild(row);
+    });
+  }));
+}
+
+/* ---------------- البلاغات والحظر ---------------- */
+window.reportUser = async function (reportedUid) {
+  const reason = prompt("اكتب سبب البلاغ (هيوصل للأدمن):");
+  if (!reason || !reason.trim()) return;
+  try {
+    await addDoc(collection(db, "reports"), {
+      reporter: currentUserDoc.uid, reportedUid,
+      reason: reason.trim().slice(0, 1000),
+      roomId: currentRoomId || null, roomType: currentRoomType || null,
+      roomTitle: currentRoomId ? $("ch-title").innerText : "",
+      status: "open", createdAt: serverTimestamp()
+    });
+    toast("وصل البلاغ للأدمن. ممكن كمان تحظر الشخص.");
+  } catch (e) { showErr(e); }
+};
+function watchReports() {
+  const q = query(collection(db, "reports"), where("status", "==", "open"));
+  unsubs.push(onSnapshot(q, (snap) => {
+    reportsCache = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    renderReports();
+  }));
+}
+function renderReports() {
+  const el = $("reports-list");
+  if (!el) return;
+  el.innerHTML = "";
+  if (!reportsCache.length) { el.innerHTML = "<p class='text-zinc-500 text-sm'>مفيش بلاغات مفتوحة.</p>"; return; }
+  [...reportsCache].sort((a, b) => tsMs(b.createdAt) - tsMs(a.createdAt)).forEach((r) => {
+    const box = document.createElement("div");
+    box.className = "bg-black p-3 rounded-xl border border-red-900/60";
+    box.innerHTML = `
+      <div class="text-sm"><b>${esc(nameOf(r.reporter))}</b> بلّغ عن <b class="text-red-400">${esc(nameOf(r.reportedUid))}</b></div>
+      <div class="text-sm text-zinc-300 my-2 whitespace-pre-wrap">${esc(r.reason)}</div>
+      <div class="text-[11px] text-zinc-500 mb-2">${esc(r.roomTitle || "")}</div>`;
+    const acts = document.createElement("div");
+    acts.className = "flex flex-wrap gap-2";
+    const mk = (t, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.innerText = t; b.onclick = fn; acts.appendChild(b); };
+    if (r.roomId) mk("فتح المحادثة", "btn-gray", () => { closePanel("admin"); openChat(r.roomId, r.roomType || "group"); });
+    mk("إيقاف المُبلَّغ عنه للمراجعة", "btn-red", () => { if (confirm("توقف حساب " + nameOf(r.reportedUid) + " لحد المراجعة؟")) updateDoc(doc(db, "users", r.reportedUid), { status: "suspended" }).catch(showErr); });
+    mk("تم الحل", "btn-green", () => updateDoc(doc(db, "reports", r.id), { status: "resolved" }));
+    box.appendChild(acts);
+    el.appendChild(box);
+  });
+}
+
+/* =========================================================
+   تطبيق قابل للتثبيت (PWA)
+   ========================================================= */
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+</script>
+</body>
+</html>
