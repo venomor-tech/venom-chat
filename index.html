@@ -12,19 +12,20 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-  :root { color-scheme: dark; }
+  :root { color-scheme: dark; --acc: #f59e0b; --bg: #000000; --mine: #09090b; --mine-t: #ffffff; --other: #ffffff; --other-t: #18181b; }
   html, body { height: 100%; }
-  body { background: #000; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+  body { background: var(--bg); -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
   .fade-in { animation: fadeIn .18s ease-out; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-  .gold { background: linear-gradient(90deg, #fde68a, #f59e0b 50%, #fde68a); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .gold { background: linear-gradient(90deg, #fde68a, var(--acc) 50%, #fde68a); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .inp { width: 100%; background: #09090b; border: 1px solid #27272a; border-radius: .65rem; padding: .7rem .85rem; color: #fff; outline: none; }
-  .inp:focus { border-color: #f59e0b; }
+  .inp:focus { border-color: var(--acc); }
   .btn { border-radius: .6rem; padding: .45rem .9rem; font-size: .8rem; font-weight: 600; transition: filter .15s; }
-  .btn:hover { filter: brightness(1.15); }
-  .btn-gold { background: linear-gradient(135deg, #fcd34d, #f59e0b); color: #000; }
+  .btn:hover { filter: brightness(1.12); }
+  .btn:disabled { opacity: .5; }
+  .btn-gold { background: linear-gradient(135deg, color-mix(in srgb, var(--acc) 65%, #fff), var(--acc)); color: #000; }
   .btn-gray { background: #27272a; color: #e4e4e7; }
   .btn-green { background: #16a34a; color: #fff; }
   .btn-red { background: rgba(220, 38, 38, .22); color: #f87171; }
@@ -32,18 +33,51 @@
   .modal.hidden { display: none; }
   .modal > div { background: #0c0c0e; border: 1px solid #27272a; width: 100%; max-height: 92vh; overflow-y: auto; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem; }
   @media (min-width: 768px) { .modal { align-items: center; padding: 1rem; } .modal > div { max-width: 28rem; border-radius: 1.25rem; } .modal > div.wide { max-width: 42rem; } }
+  .page { position: fixed; inset: 0; z-index: 45; background: var(--bg); display: flex; flex-direction: column; }
+  .page.hidden { display: none; }
   .chat-row.active { background: #18181b; }
   .msg-text { white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; }
-  #chat-messages { background-image: radial-gradient(circle at 20% 0%, rgba(245,158,11,.05), transparent 40%), radial-gradient(circle at 90% 100%, rgba(255,255,255,.03), transparent 35%); }
   #message-input { max-height: 8rem; resize: none; }
   .safe-b { padding-bottom: max(.5rem, env(safe-area-inset-bottom)); }
-  /* موبايل: شاشة واحدة في المرة (القايمة أو المحادثة) */
+  .b-owner { background: linear-gradient(135deg, #fde68a, #f59e0b 60%, #eab308); color: #000; box-shadow: 0 0 18px rgba(245,158,11,.25); outline: 1px solid rgba(255,255,255,.7); }
+  .b-mine { background: var(--mine); color: var(--mine-t); box-shadow: 0 0 0 1px #71717a; }
+  .b-other { background: var(--other); color: var(--other-t); }
+  .b-del { background: #18181b; color: #71717a; font-style: italic; }
+  .b-ai { background: linear-gradient(135deg, #2e1065, #4c1d95); color: #f5f3ff; }
+  .tick { opacity: .65; letter-spacing: -3px; }
+  .tick-seen { color: #0ea5e9; opacity: 1; font-weight: 700; }
+  .dot-on { background: #22c55e; border: 2px solid #09090b; }
+  .typing-dots span { animation: blink 1.2s infinite; } .typing-dots span:nth-child(2) { animation-delay: .2s; } .typing-dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%,80%,100% { opacity: .2 } 40% { opacity: 1 } }
+  .story-ring { background: conic-gradient(var(--acc), #fde68a, var(--acc)); padding: 2.5px; border-radius: 999px; }
+  .story-ring.seen { background: #52525b; }
+  .rec-pulse { animation: blink 1s infinite; }
+  .tabbtn { white-space: nowrap; }
+  /* موبايل: شاشة واحدة في المرة */
   @media (max-width: 767px) {
     #sidebar { width: 100%; }
     body[data-view="list"] #chat-pane { display: none; }
     body[data-view="chat"] #sidebar { display: none; }
   }
   @media (min-width: 768px) { #back-btn { display: none; } }
+  /* ===== الوضع النهاري ===== */
+  body.light { color: #18181b; }
+  .light .bg-black { background: var(--bg) !important; }
+  .light .bg-zinc-950 { background: #ffffff !important; }
+  .light .bg-zinc-900, .light .bg-zinc-900\/80, .light .bg-zinc-900\/50 { background: #f4f4f5 !important; }
+  .light .bg-zinc-800 { background: #e4e4e7 !important; }
+  .light .hover\:bg-zinc-900:hover, .light .hover\:bg-zinc-800:hover { background: #e4e4e7 !important; }
+  .light .border-zinc-800, .light .border-zinc-900, .light .border-zinc-700 { border-color: #e4e4e7 !important; }
+  .light .text-zinc-100, .light .text-zinc-200, .light .text-zinc-300 { color: #27272a !important; }
+  .light .text-zinc-400, .light .text-zinc-500, .light .text-zinc-600 { color: #71717a !important; }
+  .light .text-white { color: #18181b !important; }
+  .light .inp { background: #fff; border-color: #d4d4d8; color: #18181b; }
+  .light .btn-gray { background: #e4e4e7; color: #27272a; }
+  .light .modal > div { background: #fff; border-color: #e4e4e7; }
+  .light .chat-row.active { background: #e4e4e7; }
+  .light select, .light .bg-zinc-900 select { color: #18181b; }
+  .light .text-amber-400 { color: #b45309 !important; }
+  .light .gold { background: linear-gradient(90deg, #b45309, #f59e0b 50%, #b45309); -webkit-background-clip: text; background-clip: text; }
 </style>
 </head>
 <body data-view="list" class="text-zinc-100 overflow-hidden">
@@ -55,25 +89,38 @@
       <div class="text-4xl font-black tracking-[.3em] gold">VENOM</div>
       <div id="auth-title" class="text-sm text-zinc-500 mt-2">تسجيل الدخول</div>
     </div>
-
     <div id="register-extra" class="hidden space-y-3 mb-3">
       <input type="text" id="display-name" maxlength="40" placeholder="اسمك اللي هيظهر للناس" class="inp">
       <input type="text" id="invite-code" placeholder="كود الدعوة" class="inp" dir="ltr" style="text-align:right">
     </div>
-
     <input type="email" id="email" placeholder="البريد الإلكتروني" class="inp mb-3" dir="ltr" style="text-align:right">
     <input type="password" id="password" placeholder="كلمة المرور" class="inp mb-4" onkeydown="if(event.key==='Enter')handleAuth()">
-
     <button id="auth-btn" onclick="handleAuth()" class="btn btn-gold w-full !py-3 !text-base">دخول</button>
-
     <p class="text-center mt-4 text-sm text-zinc-400 cursor-pointer hover:underline" onclick="toggleAuthMode()">
       <span id="auth-switch-text">معندكش حساب؟ إنشاء حساب جديد</span>
     </p>
-
+    <p class="text-center mt-2 text-xs text-amber-400 cursor-pointer hover:underline" onclick="openPanel('recover')">نسيت حسابي / كلمة المرور؟</p>
     <!-- التنويه: واضح ودايمًا ظاهر -->
     <p class="text-center mt-4 text-[11px] leading-snug text-zinc-500 border-t border-zinc-800 pt-3">
-      لأغراض الحماية والإشراف، صاحب المنصة (الأدمن) له صلاحية الاطلاع على جميع المحادثات، العامة والخاصة.
+      لأغراض الحماية والإشراف، صاحب المنصة (الأدمن) له صلاحية الاطلاع على جميع المحادثات العامة والخاصة والجروبات،
+      بما فيها النسخ الأصلية للرسائل قبل أي تعديل أو حذف، والصور والفيديوهات والتسجيلات (حتى المرسلة "لمرة واحدة")، وحالة الاتصال والكتابة والاستلام والقراءة، بغض النظر عن إعدادات الخصوصية.
+      مفيش حاجة بتتسجل أو بتتشاف من غير ما التنويه ده يكون قدامك. باستخدامك للموقع إنت موافق على كده.
     </p>
+  </div>
+</div>
+
+<!-- ===================== قفل الجهاز ===================== -->
+<div id="lock-screen" class="hidden h-full flex flex-col items-center justify-center text-center p-4 overflow-y-auto">
+  <div class="bg-zinc-950 p-7 rounded-2xl border border-amber-600/60 max-w-md w-full">
+    <div class="text-5xl mb-2">🔐</div>
+    <h2 class="text-xl font-bold text-amber-400 mb-2">الحساب مربوط بجهاز تاني</h2>
+    <p class="text-zinc-300 text-sm mb-4">لأمان حسابك، مينفعش تدخل من جهاز جديد غير بموافقة. ابعت طلب وهيوصل لصاحب المنصة ولجهازك المعتمد.</p>
+    <div id="lock-actions" class="flex flex-col gap-2">
+      <button id="lock-replace" class="btn btn-gold !py-3">🔁 تبديل الجهاز القديم بالجهاز ده</button>
+      <button id="lock-add" class="btn btn-gray !py-3">➕ إضافة الجهاز ده (أكتر من جهاز)</button>
+    </div>
+    <p id="lock-status" class="text-sm text-zinc-400 mt-4"></p>
+    <button onclick="logout()" class="btn btn-gray mt-4">تسجيل الخروج</button>
   </div>
 </div>
 
@@ -98,16 +145,15 @@
 <!-- ===================== التطبيق ===================== -->
 <div id="app-screen" class="hidden h-full w-full flex">
 
-  <!-- ===== القايمة الجانبية ===== -->
   <aside id="sidebar" class="md:w-[22rem] lg:w-[24rem] shrink-0 bg-zinc-950 border-l border-zinc-800 flex flex-col h-full min-h-0">
     <header class="p-3 flex items-center gap-3 border-b border-zinc-800">
-      <button onclick="openSettings()" id="my-avatar" class="shrink-0"></button>
-      <div class="flex-1 min-w-0 cursor-pointer" onclick="openSettings()">
+      <button onclick="openPage('settings')" id="my-avatar" class="shrink-0"></button>
+      <div class="flex-1 min-w-0 cursor-pointer" onclick="openPage('settings')">
         <div id="my-name" class="font-bold truncate"></div>
         <div id="my-about" class="text-xs text-zinc-500 truncate"></div>
       </div>
-      <button id="owner-tools" onclick="openPanel('admin')" title="لوحة التحكم" class="hidden btn btn-gold !px-2.5">👑</button>
-      <button onclick="openSettings()" title="الإعدادات" class="text-zinc-400 hover:text-white text-lg px-1">⚙</button>
+      <button id="owner-tools" onclick="openPage('admin')" title="لوحة التحكم" class="hidden btn btn-gold !px-2.5 relative">👑<span id="admin-badge" class="hidden absolute -top-1 -left-1 bg-red-500 text-white text-[9px] rounded-full min-w-[1rem] h-4 px-1 flex items-center justify-center"></span></button>
+      <button onclick="openPage('settings')" title="الإعدادات" class="text-zinc-400 hover:text-white text-lg px-1">⚙</button>
       <button onclick="logout()" title="خروج" class="text-zinc-500 hover:text-white text-lg px-1">⏻</button>
     </header>
 
@@ -119,16 +165,15 @@
       <button id="new-btn" class="btn btn-gold !py-2 !px-3 text-lg leading-none" title="جديد">＋</button>
     </div>
 
+    <div id="stories-strip" class="flex gap-3 px-3 pb-2 overflow-x-auto shrink-0"></div>
     <div id="tabs" class="flex gap-1 px-3 pb-2 overflow-x-auto text-sm shrink-0"></div>
-
     <div id="chat-list" class="flex-1 overflow-y-auto min-h-0"></div>
   </aside>
 
-  <!-- ===== منطقة المحادثة ===== -->
   <main id="chat-pane" class="flex-1 flex flex-col h-full min-w-0 min-h-0 bg-black">
     <div id="empty-state" class="flex-1 flex flex-col items-center justify-center text-zinc-600 p-6 text-center">
-      <div class="text-5xl font-black tracking-[.3em] gold mb-3">VENOM</div>
-      <div class="text-sm">اختار محادثة من القايمة، أو ابحث عن حد تكلمه</div>
+      <div class="text-5xl font-black tracking-[.3em] gold mb-4">VENOM</div>
+      <div class="text-base">اختر من تريد التحدث معه واستمتع</div>
     </div>
 
     <div id="chat-view" class="hidden flex-1 flex flex-col min-h-0">
@@ -139,7 +184,9 @@
           <div id="ch-title" class="font-bold truncate"></div>
           <div id="ch-sub" class="text-xs text-zinc-500 truncate"></div>
         </div>
-        <button id="ch-info-btn" class="btn btn-gray !px-3">ⓘ</button>
+        <button id="ch-menu-btn" class="btn btn-gray !px-3" title="المزيد">⋮</button>
+        <button id="ch-info-btn" class="btn btn-gray !px-3" title="معلومات">ⓘ</button>
+        <button id="ch-close-btn" class="btn btn-gray !px-3 text-base leading-none" title="إغلاق المحادثة">✕</button>
       </header>
 
       <div id="room-bar" class="hidden bg-zinc-900/80 px-3 py-2 border-b border-zinc-800 text-sm flex flex-wrap items-center gap-2 shrink-0"></div>
@@ -162,9 +209,17 @@
           </div>
           <div id="ep-body" class="grid gap-1 max-h-44 overflow-y-auto pb-1"></div>
         </div>
-        <div class="flex items-end gap-2 p-2">
+        <div id="rec-bar" class="hidden items-center gap-3 px-3 py-3">
+          <span class="rec-pulse text-red-500 text-lg">●</span>
+          <span id="rec-time" class="font-mono flex-1">0:00</span>
+          <button id="rec-cancel" class="btn btn-gray">✕ إلغاء</button>
+          <button id="rec-send" class="btn btn-gold">➤ إرسال</button>
+        </div>
+        <div id="composer-row" class="flex items-end gap-1.5 p-2">
           <button id="emoji-btn" class="text-2xl px-1 pb-1.5 text-zinc-400 hover:text-amber-400">😊</button>
+          <button id="attach-btn" class="text-2xl px-1 pb-1.5 text-zinc-400 hover:text-amber-400" title="إرفاق">📎</button>
           <textarea id="message-input" rows="1" placeholder="اكتب رسالتك هنا..." class="inp flex-1 !py-2.5" autocomplete="off"></textarea>
+          <button id="mic-btn" class="text-2xl px-1 pb-1.5 text-zinc-400 hover:text-amber-400" title="تسجيل صوتي">🎤</button>
           <button id="send-btn" class="btn btn-gold !px-4 !py-2.5 text-lg leading-none">➤</button>
         </div>
       </div>
@@ -172,57 +227,38 @@
   </main>
 </div>
 
-<!-- ===================== القوايم والإشعارات ===================== -->
-<div id="ctx-menu" class="hidden fixed z-[60] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl py-1 min-w-[11rem] max-w-[16rem]"></div>
-<div id="toast" class="fixed top-3 left-1/2 -translate-x-1/2 z-[70] flex flex-col gap-2 items-center pointer-events-none"></div>
+<input type="file" id="file-image" accept="image/*" class="hidden" multiple>
+<input type="file" id="file-video" accept="video/*" class="hidden">
+<input type="file" id="file-any" class="hidden">
+<input type="file" id="file-wall" accept="image/*" class="hidden">
+<input type="file" id="file-avatar" accept="image/*" class="hidden">
+<input type="file" id="file-kainom" accept="image/*" class="hidden">
+<input type="file" id="file-story" accept="image/*" class="hidden">
 
-<!-- ===================== مودال: لوحة التحكم ===================== -->
-<div id="modal-admin" class="modal hidden"><div class="wide">
-  <div class="flex justify-between items-center mb-4">
-    <h2 class="text-xl font-bold text-amber-400">👑 لوحة التحكم</h2>
-    <button onclick="closePanel('admin')" class="text-zinc-400 hover:text-white text-xl">✕</button>
-  </div>
+<div id="ctx-menu" class="hidden fixed z-[60] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl py-1 min-w-[11rem] max-w-[16rem] max-h-[80vh] overflow-y-auto"></div>
+<div id="toast" class="fixed top-3 left-1/2 -translate-x-1/2 z-[90] flex flex-col gap-2 items-center pointer-events-none"></div>
 
-  <div id="public-lock-section" class="hidden mb-6">
-    <h3 class="font-bold text-sm text-zinc-400 mb-2">الجروب العام</h3>
-    <div class="bg-black p-3 rounded-xl border border-zinc-800 flex items-center gap-3">
-      <span id="public-lock-state" class="flex-1 text-sm"></span>
-      <button id="public-lock-btn" class="btn btn-gray"></button>
-    </div>
-    <p class="text-[11px] text-zinc-500 mt-1">لما يتقفل، الأعضاء بيقروا بس، وإنت والأدمن بتكتبوا.</p>
-  </div>
+<!-- ===================== صفحة الإعدادات (تبويبات) ===================== -->
+<div id="page-settings" class="page hidden">
+  <header class="bg-zinc-950 border-b border-zinc-800 px-3 py-3 flex items-center gap-3 shrink-0">
+    <button onclick="closePage('settings')" class="btn btn-gray !px-3">✕</button>
+    <h2 class="font-bold text-lg flex-1">⚙ الإعدادات</h2>
+  </header>
+  <div id="settings-tabs" class="flex gap-1 px-3 py-2 overflow-x-auto bg-zinc-950 border-b border-zinc-800 shrink-0 text-sm"></div>
+  <div class="flex-1 overflow-y-auto"><div id="settings-body" class="max-w-2xl mx-auto p-4"></div></div>
+</div>
 
-  <div id="invites-section" class="mb-6 hidden">
-    <h3 class="font-bold text-sm text-zinc-400 mb-2">أكواد الدعوة</h3>
-    <div class="bg-black p-3 rounded-xl border border-zinc-800 mb-3 flex flex-wrap gap-2 items-center">
-      <select id="invite-type" class="bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-sm">
-        <option value="once">مرة واحدة</option>
-        <option value="limited">عدد محدد</option>
-        <option value="unlimited">لا نهائي</option>
-      </select>
-      <input type="number" id="invite-max" min="2" value="5" class="hidden w-20 bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-sm" placeholder="العدد">
-      <button id="invite-create" class="btn btn-gold">توليد كود</button>
-    </div>
-    <div id="invites-list" class="space-y-2"></div>
-  </div>
+<!-- ===================== لوحة التحكم (تبويبات) ===================== -->
+<div id="page-admin" class="page hidden">
+  <header class="bg-zinc-950 border-b border-zinc-800 px-3 py-3 flex items-center gap-3 shrink-0">
+    <button onclick="closePage('admin')" class="btn btn-gray !px-3">✕</button>
+    <h2 class="font-bold text-lg flex-1 text-amber-400">👑 لوحة التحكم</h2>
+  </header>
+  <div id="admin-tabs" class="flex gap-1 px-3 py-2 overflow-x-auto bg-zinc-950 border-b border-zinc-800 shrink-0 text-sm"></div>
+  <div class="flex-1 overflow-y-auto"><div id="admin-body" class="max-w-3xl mx-auto p-4"></div></div>
+</div>
 
-  <div class="mb-6">
-    <h3 class="font-bold text-sm text-zinc-400 mb-2">طلبات الأعضاء الجدد</h3>
-    <div id="pending-users-list" class="space-y-2"></div>
-  </div>
-
-  <div class="mb-6">
-    <h3 class="font-bold text-sm text-zinc-400 mb-2">البلاغات</h3>
-    <div id="reports-list" class="space-y-2"></div>
-  </div>
-
-  <div>
-    <h3 class="font-bold text-sm text-zinc-400 mb-2">كل الأعضاء</h3>
-    <div id="all-users-list" class="space-y-2"></div>
-  </div>
-</div></div>
-
-<!-- ===================== مودال: رسالة خاصة جديدة ===================== -->
+<!-- ===================== مودالات ===================== -->
 <div id="modal-new-dm" class="modal hidden"><div>
   <div class="flex justify-between items-center mb-2">
     <h2 class="text-lg font-bold">محادثة خاصة جديدة</h2>
@@ -233,7 +269,6 @@
   <div id="dm-users-list" class="space-y-1"></div>
 </div></div>
 
-<!-- ===================== مودال: جروب جديد ===================== -->
 <div id="modal-new-group" class="modal hidden"><div>
   <div class="flex justify-between items-center mb-4">
     <h2 class="text-lg font-bold">جروب جديد</h2>
@@ -244,53 +279,11 @@
   <button onclick="createGroup()" class="btn btn-gold w-full !py-3">إنشاء</button>
 </div></div>
 
-<!-- ===================== مودال: الإعدادات / الملف الشخصي ===================== -->
-<div id="modal-settings" class="modal hidden"><div>
-  <div class="flex justify-between items-center mb-4">
-    <h2 class="text-lg font-bold">الإعدادات والملف الشخصي</h2>
-    <button onclick="closePanel('settings')" class="text-zinc-400 hover:text-white text-xl">✕</button>
-  </div>
-
-  <div class="flex items-center gap-4 mb-4">
-    <div id="settings-avatar"></div>
-    <div class="flex flex-col gap-2">
-      <label class="btn btn-gray cursor-pointer text-center">تغيير الصورة
-        <input type="file" id="settings-photo" accept="image/*" class="hidden">
-      </label>
-      <button id="settings-photo-remove" class="btn btn-red">إزالة الصورة</button>
-    </div>
-  </div>
-
-  <label class="text-xs text-zinc-400">الاسم</label>
-  <input id="settings-name" maxlength="40" class="inp mb-3" placeholder="اسمك">
-  <label class="text-xs text-zinc-400">رقم الموبايل (اختياري)</label>
-  <input id="settings-phone" maxlength="30" class="inp mb-1" placeholder="+20..." dir="ltr" style="text-align:right">
-  <p class="text-[11px] text-zinc-500 mb-3">الرقم بيظهر للأدمن بس، مش لباقي الأعضاء.</p>
-
-  <label class="text-xs text-zinc-400">الحالة</label>
-  <input id="settings-about" maxlength="100" class="inp mb-2" placeholder="مثلًا: متاح">
-  <div id="settings-about-presets" class="flex flex-wrap gap-2 mb-4"></div>
-
-  <label class="flex items-center gap-2 text-sm mb-4 cursor-pointer">
-    <input type="checkbox" id="settings-discoverable" class="accent-amber-500 w-4 h-4">
-    <span>يظهر اسمي في البحث وقايمة "جديد"</span>
-  </label>
-
-  <div class="flex flex-wrap gap-2 mb-4">
-    <button id="notif-btn" class="btn btn-gray">🔔 تفعيل إشعارات المتصفح</button>
-    <button id="install-btn" class="hidden btn btn-gray">📲 تثبيت التطبيق</button>
-  </div>
-
-  <button id="settings-save" class="btn btn-gold w-full !py-3">حفظ</button>
-</div></div>
-
-<!-- ===================== مودال: ملف شخص ===================== -->
 <div id="modal-profile" class="modal hidden"><div>
   <div class="flex justify-end mb-1"><button onclick="closePanel('profile')" class="text-zinc-400 hover:text-white text-xl">✕</button></div>
   <div id="profile-body"></div>
 </div></div>
 
-<!-- ===================== مودال: معلومات الجروب ===================== -->
 <div id="modal-group-info" class="modal hidden"><div>
   <div class="flex justify-between items-center mb-3">
     <h2 id="gi-title" class="text-lg font-bold truncate"></h2>
@@ -307,14 +300,61 @@
   </div>
 </div></div>
 
+<!-- مودال عام (نسخ الرسائل / معلومات الرسالة / الخلفيات / الإيموجي ...) -->
+<div id="modal-gen" class="modal hidden" style="z-index:55"><div class="wide">
+  <div class="flex justify-between items-center mb-3">
+    <h2 id="gen-title" class="text-lg font-bold truncate"></h2>
+    <button onclick="closePanel('gen')" class="text-zinc-400 hover:text-white text-xl">✕</button>
+  </div>
+  <div id="gen-body"></div>
+</div></div>
+
+<!-- استرداد الحساب -->
+<div id="modal-recover" class="modal hidden" style="z-index:80"><div>
+  <div class="flex justify-between items-center mb-3">
+    <h2 class="text-lg font-bold">استرداد الحساب</h2>
+    <button onclick="closePanel('recover')" class="text-zinc-400 hover:text-white text-xl">✕</button>
+  </div>
+  <h3 class="font-bold text-sm text-amber-400 mb-1">1) فاكر الإيميل؟</h3>
+  <input id="rec-email" type="email" placeholder="الإيميل" class="inp mb-2" dir="ltr" style="text-align:right">
+  <button id="rec-email-btn" class="btn btn-gold w-full mb-4">ابعتلي رابط تغيير كلمة المرور</button>
+  <h3 class="font-bold text-sm text-amber-400 mb-1">2) مش فاكر الإيميل؟</h3>
+  <p class="text-[11px] text-zinc-500 mb-2">اكتب رقم موبايلك المسجل (الأسرع) أو اسمك، وصاحب المنصة هيراجع ويرجّعلك الحساب.</p>
+  <input id="rec-phone" placeholder="رقم الموبايل المسجل" class="inp mb-2" dir="ltr" style="text-align:right">
+  <input id="rec-name" placeholder="اسمك في الموقع" maxlength="60" class="inp mb-2">
+  <input id="rec-note" placeholder="أي تفاصيل تساعد (اختياري)" maxlength="300" class="inp mb-2">
+  <button id="rec-req-btn" class="btn btn-gray w-full">إرسال طلب استرداد</button>
+</div></div>
+
+<!-- عرض الوسائط بملء الشاشة -->
+<div id="viewer" class="hidden fixed inset-0 z-[85] bg-black/95 flex flex-col">
+  <div class="flex items-center gap-2 p-3 text-white">
+    <button id="viewer-close" class="btn btn-gray !px-3">✕</button>
+    <span id="viewer-note" class="text-sm flex-1 text-zinc-300"></span>
+  </div>
+  <div id="viewer-body" class="flex-1 flex items-center justify-center p-3 min-h-0"></div>
+</div>
+
+<!-- عرض الحالة -->
+<div id="story-viewer" class="hidden fixed inset-0 z-[86] bg-black flex flex-col text-white">
+  <div id="sv-bars" class="flex gap-1 p-2"></div>
+  <div class="flex items-center gap-2 px-3 pb-2">
+    <span id="sv-av"></span>
+    <div class="flex-1 min-w-0"><div id="sv-name" class="font-bold text-sm"></div><div id="sv-time" class="text-[11px] text-zinc-400"></div></div>
+    <button id="sv-info" class="hidden btn btn-gray">👁 <span id="sv-count"></span></button>
+    <button id="sv-del" class="hidden btn btn-red">🗑</button>
+    <button id="sv-close" class="btn btn-gray !px-3">✕</button>
+  </div>
+  <div id="sv-body" class="flex-1 relative min-h-0 flex items-center justify-center"></div>
+</div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
   getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-  signOut, onAuthStateChanged
+  signOut, onAuthStateChanged, sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import {
-  getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, getDoc,
+  getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, getDoc, getDocs,
   setDoc, updateDoc, deleteDoc, where, serverTimestamp, limit, arrayUnion, arrayRemove,
   writeBatch, increment, deleteField, Timestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -328,60 +368,57 @@ const firebaseConfig = {
   projectId: "venomor-29bb2",
   storageBucket: "venomor-29bb2.firebasestorage.app",
   messagingSenderId: "74678681269",
-  appId: "1:74678681269:web:0f714c914aec46d0e408fc"
+  appId: "1:74678681269:web:0f714c914aec46d0e408fc",
+  /* انسخ العنوان من Firebase > Realtime Database (فوق الجدول). لو مختلف عن ده غيّره. */
+  databaseURL: "https://venomor-29bb2-default-rtdb.firebaseio.com"
 };
 
 /* إيميل الرئيس: لازم يكون نفسه المكتوب في firestore.rules */
 const OWNER_EMAIL = "venom@admin.com";
-/* اسم الرئيس اللي بيظهر للكل + الكلمة الصغيرة جنبه */
 const OWNER_NAME = "VENOM";
 const OWNER_TAG = "منشئ الموقع";
 
+/* اختياري: إشعارات فورية والذكاء الاصطناعي (شوف README.md) */
+const WORKER_URL = "";          // مثال: "https://venom-worker.YOURNAME.workers.dev"
+const VAPID_KEY = "";           // Firebase > Project settings > Cloud Messaging > Web Push certificates
+
+const FB = "https://www.gstatic.com/firebasejs/10.8.0/";
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+let rtdb = null, rt = {}, storage = null, st = {};
 
 /* ---------------- الحالة ---------------- */
-let isLoginMode = true;
-let registering = false;
-let currentUserDoc = null;       // { uid, email, name, role, status, phone }
-let unsubs = [];
-let unsubMessages = null;
+let isLoginMode = true, registering = false;
+let currentUserDoc = null;
+let unsubs = [], unsubMessages = null, unsubReceipts = null, unsubTyping = null;
 
-let directory = {};              // uid -> { name, role, photo, discoverable, about }
-let myNicknames = {};            // uid -> اسم من عندي
-let chatPrefs = {};              // roomId -> { pinned, archived, muted }
-let myBlocks = new Set();
-let groupsCache = [];
-let dmsCache = [];
-let groupInvites = [];           // دعوات جروبات وصلتلي (pending)
-let usersCache = [];             // للأدمن
-let reportsCache = [];
-let generalMeta = {};            // آخر رسالة في الجروب العام
-let publicOpen = true;
+let directory = {}, myNicknames = {}, chatPrefs = {}, myBlocks = new Set();
+let groupsCache = [], dmsCache = [], groupInvites = [], usersCache = [], reportsCache = [];
+let recoveryCache = [], deviceReqsAll = [], myDeviceReqs = [], invitesCache = [];
+let generalMeta = {}, publicOpen = true;
+let presence = {}, typingMap = {}, receipts = {}, storiesCache = [];
+let kainomPhoto = "";
+let theme = { mode: "dark", accent: "#f59e0b", mine: "#09090b", other: "#ffffff", bg: "" };
+let wall = {}, chatWall = {};
 
-let currentRoomId = null;
-let currentRoomType = null;      // public | group | dm
-let currentTab = "all";
-let searchQuery = "";
-let lastMessages = [];
-let lastRead = {};
-let seenLast = {};
-let replyTo = null;              // { id, uid, text }
-let editing = null;              // الرسالة اللي بتتعدل
-let mentionMap = {};             // الاسم -> uid
-let scrollNext = false;
-let deferredInstall = null;
+let currentRoomId = null, currentRoomType = null;   // public | group | dm | ai
+let currentTab = "all", searchQuery = "";
+let lastMessages = [], lastRead = {}, seenLast = {};
+let replyTo = null, editing = null, mentionMap = {};
+let scrollNext = false, deferredInstall = null;
 let giGroupId = null, giQuery = "";
-let pendingPhoto;                // undefined = من غير تغيير، "" = إزالة
+let aiMsgs = [], aiBusy = false;
+const pageTab = { settings: "profile", admin: "members" };
 
 /* ---------------- أدوات ---------------- */
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const showErr = (e) => alert("معرفتش: " + (e && (e.code || e.message) || e));
-const tsMs = (t) => (t && typeof t.toMillis === "function") ? t.toMillis() : (t && t.seconds ? t.seconds * 1000 : 0);
+const tsMs = (t) => (t && typeof t.toMillis === "function") ? t.toMillis() : (t && t.seconds ? t.seconds * 1000 : (typeof t === "number" ? t : 0));
 const tfmt = new Intl.DateTimeFormat("ar-EG", { hour: "numeric", minute: "2-digit" });
 const fmtTime = (ms) => ms ? tfmt.format(new Date(ms)) : "";
+const fmtFull = (ms) => ms ? new Date(ms).toLocaleString("ar-EG", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "";
 function fmtListTime(ms) {
   if (!ms) return "";
   const d = new Date(ms), n = new Date();
@@ -403,10 +440,21 @@ const validPhoto = (p) => typeof p === "string" && p.length < 40000 && PHOTO_RE.
 const dmIdFor = (a, b) => { const [x, y] = [a, b].sort(); return `dm_${x}_${y}`; };
 const isPriv = () => currentUserDoc && (currentUserDoc.role === "owner" || currentUserDoc.role === "admin");
 const isOwnerMe = () => currentUserDoc && currentUserDoc.role === "owner";
+const myUid = () => currentUserDoc.uid;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function show(id, visible) { $(id).classList.toggle("hidden", !visible); }
 window.openPanel = (n) => $("modal-" + n).classList.remove("hidden");
 window.closePanel = (n) => $("modal-" + n).classList.add("hidden");
+function openGen(title, content) {
+  $("modal-gen").style.zIndex = 55;
+  $("gen-title").innerText = title;
+  const b = $("gen-body");
+  b.innerHTML = "";
+  if (typeof content === "string") b.innerHTML = content; else b.appendChild(content);
+  openPanel("gen");
+}
+function mkBtn(text, cls, fn) { const b = document.createElement("button"); b.className = "btn " + cls; b.innerText = text; if (fn) b.onclick = fn; return b; }
 
 function toast(msg, ms = 3800) {
   const t = document.createElement("div");
@@ -416,6 +464,121 @@ function toast(msg, ms = 3800) {
   setTimeout(() => t.remove(), ms);
 }
 
+/* ---------------- الصور: ضغط تلقائي ---------------- */
+function loadImg(file) {
+  return new Promise((res, rej) => {
+    const u = URL.createObjectURL(file);
+    const i = new Image();
+    i.onload = () => { URL.revokeObjectURL(u); res(i); };
+    i.onerror = () => { URL.revokeObjectURL(u); rej(new Error("الصورة مش مقروءة")); };
+    i.src = u;
+  });
+}
+async function compressImage(file, max = 1280, q = 0.75, square = 0) {
+  const img = await loadImg(file);
+  const c = document.createElement("canvas");
+  const ctx = c.getContext("2d");
+  if (square) {
+    c.width = c.height = square;
+    const s = Math.min(img.width, img.height);
+    ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, square, square);
+  } else {
+    const k = Math.min(1, max / Math.max(img.width, img.height));
+    c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+  }
+  return new Promise((r) => c.toBlob(r, "image/jpeg", q));
+}
+const blobToDataURL = (b) => new Promise((r) => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(b); });
+async function photoDataUrl(file, side = 160) {
+  let q = 0.72, d = await blobToDataURL(await compressImage(file, 0, q, side));
+  while (d.length > 38000 && q > 0.3) { q -= 0.1; d = await blobToDataURL(await compressImage(file, 0, q, side)); }
+  return d;
+}
+
+/* ---------------- رقم الموبايل ---------------- */
+function normPhone(s) {
+  let p = String(s || "").replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[^\d+]/g, "").replace(/(?!^)\+/g, "");
+  if (p.startsWith("00")) p = "+" + p.slice(2);
+  if (/^01[0125]\d{8}$/.test(p)) p = "+2" + p;
+  else if (/^1[0125]\d{8}$/.test(p)) p = "+20" + p;
+  else if (/^201[0125]\d{8}$/.test(p)) p = "+" + p;
+  return p;
+}
+const phoneOk = (p) => p === "" || /^\+?[0-9]{8,15}$/.test(p);
+const phoneVerified = (u) => !!(u && u.phone && u.verifiedPhone === u.phone);
+
+/* =========================================================
+   المظهر والألوان والخلفيات
+   ========================================================= */
+const WALLS = [
+  ["none", "بدون", ""],
+  ["w1", "ذهبي هادئ", "radial-gradient(circle at 20% 0%,rgba(245,158,11,.18),transparent 45%),radial-gradient(circle at 90% 100%,rgba(255,255,255,.06),transparent 40%)"],
+  ["w2", "ليلي", "linear-gradient(160deg,#0f172a,#1e1b4b)"],
+  ["w3", "غابة", "linear-gradient(160deg,#052e16,#14532d)"],
+  ["w4", "نار", "linear-gradient(160deg,#450a0a,#7c2d12)"],
+  ["w5", "محيط", "linear-gradient(160deg,#082f49,#155e75)"],
+  ["w6", "رمادي", "linear-gradient(160deg,#18181b,#3f3f46)"],
+  ["w7", "رملي", "linear-gradient(160deg,#fef3c7,#fde68a)"],
+  ["w8", "وردي", "linear-gradient(160deg,#fce7f3,#fbcfe8)"],
+  ["w9", "سماء", "linear-gradient(160deg,#e0f2fe,#bae6fd)"]
+];
+const IMG_WALL_RE = /^img:data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/;
+function wallCss(v) {
+  if (!v) return "";
+  if (v.startsWith("img:")) return IMG_WALL_RE.test(v) ? `url("${v.slice(4)}") center/cover no-repeat` : "";
+  const w = WALLS.find((x) => x[0] === v);
+  return w ? w[2] : "";
+}
+function wallFor(roomId, type) {
+  if (!roomId) return "";
+  if (chatWall[roomId] !== undefined) return chatWall[roomId];
+  const k = type === "dm" ? "dm" : type === "public" ? "public" : "group";
+  return wall[k] !== undefined ? wall[k] : (wall.all || "");
+}
+function applyWall() {
+  const el = $("chat-messages");
+  if (!el) return;
+  const css = wallFor(currentRoomId, currentRoomType);
+  el.style.background = wallCss(css) || "";
+}
+const hexOk = (h) => typeof h === "string" && /^#[0-9a-f]{6}$/i.test(h);
+const lum = (hex) => { const n = parseInt(hex.slice(1), 16); return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255; };
+function applyTheme() {
+  let mode = theme.mode;
+  if (mode === "auto") mode = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  document.body.classList.toggle("light", mode === "light");
+  const s = document.documentElement.style;
+  const acc = hexOk(theme.accent) ? theme.accent : "#f59e0b";
+  const bg = hexOk(theme.bg) ? theme.bg : (mode === "light" ? "#f4f4f5" : "#000000");
+  const mine = hexOk(theme.mine) ? theme.mine : "#09090b";
+  const other = hexOk(theme.other) ? theme.other : "#ffffff";
+  s.setProperty("--acc", acc); s.setProperty("--bg", bg);
+  s.setProperty("--mine", mine); s.setProperty("--mine-t", lum(mine) > 0.55 ? "#18181b" : "#ffffff");
+  s.setProperty("--other", other); s.setProperty("--other-t", lum(other) > 0.55 ? "#18181b" : "#ffffff");
+  document.documentElement.style.colorScheme = mode;
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = bg;
+}
+try { Object.assign(theme, JSON.parse(localStorage.getItem("venom_theme") || "{}")); } catch (_) {}
+applyTheme();
+async function saveTheme(patch) {
+  Object.assign(theme, patch);
+  applyTheme();
+  try { localStorage.setItem("venom_theme", JSON.stringify(theme)); } catch (_) {}
+  if (currentUserDoc) setDoc(doc(db, "users", myUid(), "prefs", "theme"), theme).catch(() => {});
+}
+function watchPrefs() {
+  unsubs.push(onSnapshot(collection(db, "users", myUid(), "prefs"), (snap) => {
+    chatWall = {};
+    snap.forEach((d) => {
+      if (d.id === "theme") { Object.assign(theme, d.data()); try { localStorage.setItem("venom_theme", JSON.stringify(theme)); } catch (_) {} applyTheme(); }
+      else if (d.id === "wall") wall = d.data();
+      else if (d.id.startsWith("wp_")) chatWall[d.id.slice(3)] = d.data().v;
+    });
+    applyWall(); refreshPageIfOpen("settings");
+  }, () => {}));
+}
+
 /* ---------------- الأسماء والصور ---------------- */
 const isOwnerUid = (uid) => !!(directory[uid] && directory[uid].role === "owner");
 function realName(uid) {
@@ -423,7 +586,6 @@ function realName(uid) {
   return (directory[uid] && directory[uid].name) || "مستخدم";
 }
 const nameOf = (uid) => myNicknames[uid] || realName(uid);
-// اسم بشكل HTML: الرئيس لون مميز + "منشئ الموقع" بخط أصغر، الباقي لون عادي
 function nameHtml(uid, onLight) {
   const n = esc(nameOf(uid));
   if (isOwnerUid(uid)) {
@@ -433,20 +595,57 @@ function nameHtml(uid, onLight) {
   }
   return `<span>${n}</span>`;
 }
-function avatarHtml(uid, size = 40) {
+function presenceOf(uid) {
+  if (!uid || uid === (currentUserDoc && myUid())) return null;
+  const p = presence[uid];
+  if (!p) return null;
+  if (p.hidden && !isOwnerMe()) return null;
+  return p;
+}
+function avatarHtml(uid, size = 40, dot = false) {
   const d = directory[uid] || {};
-  const st = `width:${size}px;height:${size}px;min-width:${size}px;`;
+  const st2 = `width:${size}px;height:${size}px;min-width:${size}px;`;
   const ring = d.role === "owner" ? "ring-2 ring-amber-400" : "";
-  if (validPhoto(d.photo)) return `<img src="${d.photo}" alt="" class="rounded-full object-cover ${ring}" style="${st}">`;
-  const letter = esc((realName(uid) || "؟").trim().charAt(0) || "؟");
-  const bg = d.role === "owner" ? "bg-gradient-to-br from-amber-300 to-yellow-600 text-black" : "bg-zinc-700 text-white";
-  return `<span class="rounded-full flex items-center justify-center font-bold ${bg} ${ring}" style="${st}font-size:${Math.round(size * .42)}px">${letter}</span>`;
+  let inner;
+  if (validPhoto(d.photo)) inner = `<img src="${d.photo}" alt="" class="rounded-full object-cover ${ring}" style="${st2}">`;
+  else {
+    const letter = esc((realName(uid) || "؟").trim().charAt(0) || "؟");
+    const bg = d.role === "owner" ? "bg-gradient-to-br from-amber-300 to-yellow-600 text-black" : "bg-zinc-700 text-white";
+    inner = `<span class="rounded-full flex items-center justify-center font-bold ${bg} ${ring}" style="${st2}font-size:${Math.round(size * .42)}px">${letter}</span>`;
+  }
+  const p = dot ? presenceOf(uid) : null;
+  if (p && p.online) return `<span class="relative inline-block" style="line-height:0">${inner}<span class="dot-on absolute bottom-0 right-0 rounded-full" style="width:${Math.max(10, size * .26)}px;height:${Math.max(10, size * .26)}px"></span></span>`;
+  return inner;
 }
 function iconAvatar(emoji, size = 48) {
   return `<span class="rounded-full flex items-center justify-center bg-zinc-800 border border-amber-500/40" style="width:${size}px;height:${size}px;min-width:${size}px;font-size:${Math.round(size * .5)}px">${emoji}</span>`;
 }
 function groupAvatar(name, size = 48) {
   return `<span class="rounded-full flex items-center justify-center bg-zinc-800 border border-zinc-600 font-bold" style="width:${size}px;height:${size}px;min-width:${size}px;font-size:${Math.round(size * .42)}px">${esc((name || "?").trim().charAt(0))}</span>`;
+}
+
+/* شعار Kainom AI الأصلي: عين سداسية بنفسجية بإطار ذهبي وحرف K مجرد */
+const KAINOM_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+<defs>
+<radialGradient id="bg" cx="50%" cy="38%" r="75%"><stop offset="0" stop-color="#4c1d95"/><stop offset=".55" stop-color="#1e0b3a"/><stop offset="1" stop-color="#05020c"/></radialGradient>
+<linearGradient id="gd" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fde68a"/><stop offset="1" stop-color="#d97706"/></linearGradient>
+<radialGradient id="ir" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fef3c7"/><stop offset=".45" stop-color="#a855f7"/><stop offset="1" stop-color="#4c1d95"/></radialGradient>
+</defs>
+<rect width="120" height="120" fill="url(#bg)"/>
+<g stroke="#a78bfa" stroke-opacity=".35" stroke-width="1" fill="none"><path d="M0 92 L38 70 M120 92 L82 70 M60 0 V22 M0 30 L30 44 M120 30 L90 44"/><circle cx="38" cy="70" r="2.5"/><circle cx="82" cy="70" r="2.5"/></g>
+<polygon points="60,10 100,33 100,87 60,110 20,87 20,33" fill="none" stroke="url(#gd)" stroke-width="3.5" stroke-linejoin="round"/>
+<polygon points="60,20 91,38 91,82 60,100 29,82 29,38" fill="#0b0518" fill-opacity=".75" stroke="#f59e0b" stroke-opacity=".4" stroke-width="1"/>
+<path d="M38 60 Q60 38 82 60 Q60 82 38 60 Z" fill="#0b0518" stroke="url(#gd)" stroke-width="2.5"/>
+<circle cx="60" cy="60" r="12" fill="url(#ir)"/>
+<ellipse cx="60" cy="60" rx="3.2" ry="10" fill="#0b0518"/>
+<circle cx="64" cy="55" r="2.2" fill="#fff" fill-opacity=".85"/>
+<path d="M45 30 V46 M45 38 L55 30 M45 38 L56 46" stroke="url(#gd)" stroke-width="3" stroke-linecap="round" fill="none" transform="translate(-4 0) scale(.9) translate(6 3)"/>
+<path d="M44 90 Q60 100 76 90" stroke="url(#gd)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+</svg>`;
+const KAINOM_URL = "data:image/svg+xml;utf8," + encodeURIComponent(KAINOM_SVG);
+function kainomAvatar(size = 48) {
+  const src = validPhoto(kainomPhoto) ? kainomPhoto : KAINOM_URL;
+  return `<img src="${src}" alt="Kainom AI" class="rounded-full object-cover ring-2 ring-violet-400" style="width:${size}px;height:${size}px;min-width:${size}px">`;
 }
 
 /* =========================================================
@@ -466,13 +665,11 @@ window.handleAuth = async function () {
   if (!email || !password) { alert("يرجى ملء جميع الحقول!"); return; }
   try {
     if (isLoginMode) { await signInWithEmailAndPassword(auth, email, password); return; }
-
     const name = $("display-name").value.trim().slice(0, 40);
     const code = $("invite-code").value.trim().toUpperCase();
     if (!name) { alert("اكتب اسمك الأول"); return; }
     const isOwner = email.toLowerCase() === OWNER_EMAIL.toLowerCase();
     if (!isOwner && !code) { alert("اكتب كود الدعوة"); return; }
-
     registering = true;
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     const user = cred.user;
@@ -507,16 +704,19 @@ function translateError(code) {
     "auth/invalid-credential": "الإيميل أو كلمة المرور غلط.",
     "auth/user-not-found": "مفيش حساب بالإيميل ده.",
     "auth/wrong-password": "كلمة المرور غلط.",
-    "auth/network-request-failed": "مفيش اتصال بالإنترنت."
+    "auth/network-request-failed": "مفيش اتصال بالإنترنت.",
+    "auth/too-many-requests": "محاولات كتير. استنى شوية وجرب تاني."
   };
   return map[code] || code;
 }
 
 window.logout = function () {
+  try { setOffline(); } catch (_) {}
   unsubs.forEach((u) => { try { u(); } catch (_) {} });
   unsubs = [];
-  if (unsubMessages) { unsubMessages(); unsubMessages = null; }
-  signOut(auth);
+  [unsubMessages, unsubReceipts, unsubTyping].forEach((u) => { try { u && u(); } catch (_) {} });
+  unsubMessages = unsubReceipts = unsubTyping = null;
+  signOut(auth).then(() => location.reload()).catch(() => location.reload());
 };
 
 onAuthStateChanged(auth, async (user) => {
@@ -524,8 +724,90 @@ onAuthStateChanged(auth, async (user) => {
   await routeUser(user);
 });
 
+/* ---------------- استرداد الحساب ---------------- */
+$("rec-email-btn").onclick = async () => {
+  const email = $("rec-email").value.trim();
+  if (!email) { alert("اكتب الإيميل"); return; }
+  try { await sendPasswordResetEmail(auth, email); alert("لو الإيميل ده مسجل، هيوصلك رابط تغيير كلمة المرور (بص في Spam كمان)."); closePanel("recover"); }
+  catch (e) { alert("خطأ: " + translateError(e.code || e.message)); }
+};
+$("rec-req-btn").onclick = async () => {
+  const phone = normPhone($("rec-phone").value), name = $("rec-name").value.trim(), note = $("rec-note").value.trim();
+  if (!phone && !name) { alert("اكتب رقم الموبايل أو الاسم."); return; }
+  if (!phoneOk(phone)) { alert("رقم الموبايل مش صحيح."); return; }
+  try {
+    await addDoc(collection(db, "recoveryRequests"), { name: name.slice(0, 60), phone: phone.slice(0, 20), note: note.slice(0, 300), status: "open", createdAt: serverTimestamp() });
+    alert("وصل طلبك لصاحب المنصة. هيتواصل معاك أو يبعتلك رابط على إيميلك المسجل.");
+    closePanel("recover");
+  } catch (e) { showErr(e); }
+};
+
+/* ---------------- ربط الحساب بجهاز واحد ---------------- */
+let DEVICE_ID = "";
+try { DEVICE_ID = localStorage.getItem("venom_device") || ""; } catch (_) {}
+if (!DEVICE_ID) {
+  DEVICE_ID = Array.from(crypto.getRandomValues(new Uint8Array(10)), (b) => b.toString(16).padStart(2, "0")).join("");
+  try { localStorage.setItem("venom_device", DEVICE_ID); } catch (_) {}
+}
+function deviceLabel() {
+  const ua = navigator.userAgent;
+  const os = /Android/i.test(ua) ? "Android" : /iPhone|iPad/i.test(ua) ? "iOS" : /Windows/i.test(ua) ? "Windows" : /Mac/i.test(ua) ? "Mac" : /Linux/i.test(ua) ? "Linux" : "جهاز";
+  const br = /Edg\//.test(ua) ? "Edge" : /Chrome\//.test(ua) ? "Chrome" : /Firefox\//.test(ua) ? "Firefox" : /Safari\//.test(ua) ? "Safari" : "متصفح";
+  return `${os} / ${br}`;
+}
+async function deviceGate() {
+  if (isOwnerMe()) return true;                       // الرئيس مستثنى عشان ميتقفلش على نفسه
+  const devs = currentUserDoc.devices || [];
+  if (!devs.length) {
+    await updateDoc(doc(db, "users", myUid()), { devices: [DEVICE_ID] });
+    currentUserDoc.devices = [DEVICE_ID];
+    return true;
+  }
+  if (devs.includes(DEVICE_ID)) return true;
+  showLock();
+  return false;
+}
+function showLock() {
+  show("lock-screen", true);
+  const rid = myUid() + "_" + DEVICE_ID;
+  const statusEl = $("lock-status");
+  const ref = doc(db, "deviceRequests", rid);
+  const send = async (mode) => {
+    try {
+      const s = await getDoc(ref);
+      if (!s.exists()) await setDoc(ref, { uid: myUid(), deviceId: DEVICE_ID, label: deviceLabel(), mode, status: "pending", createdAt: serverTimestamp() });
+      else if (s.data().status !== "pending") await updateDoc(ref, { status: "pending" });
+    } catch (e) { showErr(e); }
+  };
+  $("lock-replace").onclick = () => send("replace");
+  $("lock-add").onclick = () => send("add");
+  onSnapshot(ref, (s) => {
+    if (!s.exists()) { statusEl.innerText = ""; return; }
+    const d = s.data();
+    $("lock-actions").classList.toggle("hidden", d.status === "pending");
+    if (d.status === "pending") statusEl.innerText = "⏳ الطلب اتبعت. بانتظار موافقة صاحب المنصة أو جهازك المعتمد…";
+    else if (d.status === "declined") { statusEl.innerText = "❌ الطلب اترفض."; $("lock-actions").classList.remove("hidden"); }
+    else if (d.status === "approved") { statusEl.innerText = "✅ اتوافق عليه، بيتم الدخول…"; setTimeout(() => location.reload(), 600); }
+  }, () => {});
+}
+async function approveDevice(req, approve) {
+  try {
+    const batch = writeBatch(db);
+    if (approve) {
+      const u = req.uid === myUid() ? currentUserDoc : (usersCache.find((x) => x.id === req.uid) || {});
+      const cur = u.devices || [];
+      const devs = req.mode === "replace" ? [req.deviceId] : [...new Set([...cur, req.deviceId])].slice(-4);
+      batch.update(doc(db, "users", req.uid), { devices: devs });
+    }
+    batch.update(doc(db, "deviceRequests", req.id), { status: approve ? "approved" : "declined" });
+    await batch.commit();
+    toast(approve ? "اتوافق على الجهاز" : "اتم الرفض");
+  } catch (e) { showErr(e); }
+}
+
+/* ---------------- التوجيه بعد الدخول ---------------- */
 async function routeUser(user) {
-  show("auth-screen", false); show("pending-screen", false); show("suspended-screen", false); show("app-screen", false);
+  ["auth-screen", "pending-screen", "suspended-screen", "app-screen", "lock-screen"].forEach((i) => show(i, false));
   if (!user) { show("auth-screen", true); return; }
   try {
     let uSnap = await getDoc(doc(db, "users", user.uid));
@@ -548,6 +830,7 @@ async function routeUser(user) {
       }));
       return;
     }
+    if (!(await deviceGate())) return;
     startApp();
   } catch (e) {
     console.error(e);
@@ -562,53 +845,67 @@ async function routeUser(user) {
 function startApp() {
   show("app-screen", true);
   document.body.dataset.view = "list";
-  const me = currentUserDoc.uid;
+  const me = myUid();
   try { lastRead = JSON.parse(localStorage.getItem("venom_lr_" + me) || "{}"); } catch (_) { lastRead = {}; }
+  try { aiMsgs = JSON.parse(localStorage.getItem("venom_ai_" + me) || "[]"); } catch (_) { aiMsgs = []; }
 
   $("owner-tools").classList.toggle("hidden", !isPriv());
-  $("public-lock-section").classList.toggle("hidden", !isOwnerMe());
-  $("invites-section").classList.toggle("hidden", !isOwnerMe());
 
   unsubs.push(onSnapshot(doc(db, "users", me), (s) => {
-    if (s.exists() && (s.data().status !== "approved" || s.data().role !== currentUserDoc.role)) location.reload();
+    if (!s.exists()) return;
+    const d = s.data();
+    if (d.status !== "approved" || d.role !== currentUserDoc.role) { location.reload(); return; }
+    if (!isOwnerMe() && (d.devices || []).length && !(d.devices || []).includes(DEVICE_ID)) { location.reload(); return; }
+    Object.assign(currentUserDoc, d);
+    refreshPageIfOpen("settings");
   }));
 
   publishDirectoryEntry();
+  watchPrefs();
   watchDirectory();
   watchNicknames();
   watchChatPrefs();
   watchMyBlocks();
   watchPublicSettings();
+  watchKainom();
   watchGeneralMeta();
   loadMyGroups();
   loadMyDms();
   watchGroupInvites();
+  watchStories();
+  watchMyDeviceReqs();
   if (isPriv()) { watchPendingUsers(); watchAllUsers(); watchReports(); }
-  if (isOwnerMe()) watchInvites();
+  if (isOwnerMe()) { watchInvites(); watchRecovery(); watchAllDeviceReqs(); }
 
   setupTabs();
   renderMeHeader();
   renderChatList();
+  initExtras();
+}
+
+async function initExtras() {
+  try { const m = await import(FB + "firebase-database.js"); rt = m; rtdb = m.getDatabase(app); startPresence(); } catch (e) { console.warn("RTDB غير متاح", e); }
+  try { const m = await import(FB + "firebase-storage.js"); st = m; storage = m.getStorage(app); } catch (e) { console.warn("Storage غير متاح", e); }
+  if ("Notification" in window && Notification.permission === "granted") initPush();
 }
 
 async function publishDirectoryEntry() {
-  try {
-    await setDoc(doc(db, "directory", currentUserDoc.uid), { name: currentUserDoc.name, role: currentUserDoc.role }, { merge: true });
-  } catch (e) { console.error("directory", e); }
+  try { await setDoc(doc(db, "directory", myUid()), { name: currentUserDoc.name, role: currentUserDoc.role }, { merge: true }); }
+  catch (e) { console.error("directory", e); }
 }
 
 function rerenderAll() {
   renderMeHeader();
   renderChatList();
+  renderStoriesStrip();
   if (currentRoomId) { renderChatHeader(); renderRoomBar(); renderComposerState(); renderMessages(); }
-  renderReports();
   if (!$("modal-group-info").classList.contains("hidden")) renderGroupInfo();
+  refreshPageIfOpen("admin"); refreshPageIfOpen("settings");
 }
-
 function renderMeHeader() {
-  const me = currentUserDoc.uid;
+  const me = myUid();
   $("my-avatar").innerHTML = avatarHtml(me, 44);
-  $("my-name").innerHTML = nameHtml(me).replace(/myNick/g, "");
+  $("my-name").innerHTML = nameHtml(me);
   const d = directory[me] || {};
   $("my-about").innerText = d.about || (isOwnerMe() ? OWNER_TAG : "");
 }
@@ -616,86 +913,193 @@ function renderMeHeader() {
 /* =========================================================
    مستمعات البيانات
    ========================================================= */
+const listen = (q, cb, err) => unsubs.push(onSnapshot(q, cb, err || ((e) => console.warn("listen", e.code))));
 function watchDirectory() {
-  unsubs.push(onSnapshot(collection(db, "directory"), (snap) => {
+  listen(collection(db, "directory"), (snap) => {
     directory = {};
     snap.forEach((d) => { directory[d.id] = d.data(); });
     rerenderAll();
-  }));
+  });
 }
 function watchNicknames() {
-  unsubs.push(onSnapshot(collection(db, "users", currentUserDoc.uid, "nicknames"), (snap) => {
+  listen(collection(db, "users", myUid(), "nicknames"), (snap) => {
     myNicknames = {};
     snap.forEach((d) => { myNicknames[d.id] = d.data().nickname; });
     rerenderAll();
-  }));
+  });
 }
 function watchChatPrefs() {
-  unsubs.push(onSnapshot(collection(db, "users", currentUserDoc.uid, "chatPrefs"), (snap) => {
+  listen(collection(db, "users", myUid(), "chatPrefs"), (snap) => {
     chatPrefs = {};
     snap.forEach((d) => { chatPrefs[d.id] = d.data(); });
     renderChatList();
-  }));
+    if (currentRoomId) renderMessages();
+  });
 }
 function watchMyBlocks() {
-  const q = query(collection(db, "blocks"), where("blocker", "==", currentUserDoc.uid));
-  unsubs.push(onSnapshot(q, (snap) => {
+  listen(query(collection(db, "blocks"), where("blocker", "==", myUid())), (snap) => {
     myBlocks = new Set(snap.docs.map((d) => d.data().blocked));
-    renderRoomBar(); renderComposerState();
-  }));
+    renderRoomBar(); renderComposerState(); refreshPageIfOpen("settings");
+  });
 }
 function watchPublicSettings() {
-  unsubs.push(onSnapshot(doc(db, "settings", "public"), (s) => {
+  listen(doc(db, "settings", "public"), (s) => {
     publicOpen = !s.exists() || s.data().open !== false;
-    renderPublicLock();
-    renderChatHeader(); renderRoomBar(); renderComposerState(); renderChatList();
-  }, () => {}));
+    renderChatHeader(); renderRoomBar(); renderComposerState(); renderChatList(); refreshPageIfOpen("admin");
+  });
+}
+function watchKainom() {
+  listen(doc(db, "settings", "kainom"), (s) => {
+    kainomPhoto = s.exists() ? (s.data().photo || "") : "";
+    renderChatList(); if (currentRoomType === "ai") renderChatHeader();
+  });
 }
 function watchGeneralMeta() {
-  unsubs.push(onSnapshot(doc(db, "rooms", "general"), (s) => {
+  listen(doc(db, "rooms", "general"), (s) => {
     generalMeta = s.exists() ? s.data({ serverTimestamps: "estimate" }) : {};
     renderChatList();
-  }, () => {}));
+  });
 }
 function loadMyGroups() {
-  const q = isPriv()
-    ? collection(db, "groups")
-    : query(collection(db, "groups"), where("members", "array-contains", currentUserDoc.uid));
-  unsubs.push(onSnapshot(q, (snap) => {
+  const q = isPriv() ? collection(db, "groups") : query(collection(db, "groups"), where("members", "array-contains", myUid()));
+  listen(q, (snap) => {
     groupsCache = snap.docs.map((d) => ({ id: d.id, ...d.data({ serverTimestamps: "estimate" }) }));
     renderChatList(); renderChatHeader(); renderComposerState();
     if (!$("modal-group-info").classList.contains("hidden")) renderGroupInfo();
-  }));
+  });
 }
 function loadMyDms() {
-  const q = isPriv()
-    ? collection(db, "dms")
-    : query(collection(db, "dms"), where("members", "array-contains", currentUserDoc.uid));
-  unsubs.push(onSnapshot(q, (snap) => {
+  const q = isPriv() ? collection(db, "dms") : query(collection(db, "dms"), where("members", "array-contains", myUid()));
+  listen(q, (snap) => {
     dmsCache = snap.docs.map((d) => ({ id: d.id, ...d.data({ serverTimestamps: "estimate" }) }));
     renderChatList(); renderChatHeader(); renderRoomBar(); renderComposerState();
-  }));
+  });
 }
 function watchGroupInvites() {
-  const q = query(collection(db, "groupInvites"), where("to", "==", currentUserDoc.uid));
-  unsubs.push(onSnapshot(q, (snap) => {
+  listen(query(collection(db, "groupInvites"), where("to", "==", myUid())), (snap) => {
     groupInvites = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((i) => i.status === "pending");
     renderChatList();
-  }));
+  });
+}
+function watchMyDeviceReqs() {
+  listen(query(collection(db, "deviceRequests"), where("uid", "==", myUid())), (snap) => {
+    const prev = myDeviceReqs.length;
+    myDeviceReqs = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((r) => r.status === "pending" && r.deviceId !== DEVICE_ID);
+    if (myDeviceReqs.length > prev) toast("🔐 فيه طلب دخول من جهاز جديد على حسابك. شوفه في الإعدادات > الأمان");
+    refreshPageIfOpen("settings");
+  });
+}
+function watchAllDeviceReqs() {
+  listen(query(collection(db, "deviceRequests"), where("status", "==", "pending")), (snap) => {
+    deviceReqsAll = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    updateAdminBadge(); refreshPageIfOpen("admin");
+  });
+}
+function watchRecovery() {
+  listen(query(collection(db, "recoveryRequests"), where("status", "==", "open")), (snap) => {
+    recoveryCache = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    updateAdminBadge(); refreshPageIfOpen("admin");
+  });
+}
+function updateAdminBadge() {
+  const n = (usersCache.filter((u) => u.status === "pending").length) + reportsCache.length + recoveryCache.length + deviceReqsAll.length;
+  const b = $("admin-badge");
+  b.innerText = n; b.classList.toggle("hidden", !n);
+}
+
+/* ---------------- الحضور (Online) والكتابة (Typing) عبر Realtime Database ---------------- */
+let presenceStarted = false;
+function myHidden(key) { const d = directory[myUid()] || {}; return !!d[key]; }
+function presencePayload(online) { return { online, last: rt.serverTimestamp(), hidden: myHidden("hideOnline") }; }
+function startPresence() {
+  if (!rtdb || presenceStarted) return;
+  presenceStarted = true;
+  const me = myUid();
+  const pRef = rt.ref(rtdb, "presence/" + me);
+  rt.onValue(rt.ref(rtdb, ".info/connected"), (s) => {
+    if (s.val() === true) {
+      rt.onDisconnect(pRef).set({ online: false, last: rt.serverTimestamp(), hidden: myHidden("hideOnline") })
+        .then(() => rt.set(pRef, presencePayload(!document.hidden)));
+    }
+  });
+  rt.onValue(rt.ref(rtdb, "presence"), (s) => { presence = s.val() || {}; renderChatList(); if (currentRoomId) renderChatHeader(); });
+  document.addEventListener("visibilitychange", () => { try { rt.set(pRef, presencePayload(!document.hidden)); } catch (_) {} if (!document.hidden && currentRoomId) markRoomRead(currentRoomId); });
+}
+function refreshPresence() { if (rtdb && currentUserDoc) rt.set(rt.ref(rtdb, "presence/" + myUid()), presencePayload(!document.hidden)).catch(() => {}); }
+function setOffline() { if (rtdb && currentUserDoc) rt.set(rt.ref(rtdb, "presence/" + myUid()), { online: false, last: rt.serverTimestamp(), hidden: myHidden("hideOnline") }); }
+
+let typingTimer = null, typingSentAt = 0, typingRoom = null;
+function sendTyping() {
+  if (!rtdb || !currentRoomId || currentRoomType === "ai") return;
+  const room = currentRoomId, now = Date.now();
+  const r = rt.ref(rtdb, `typing/${room}/${myUid()}`);
+  if (now - typingSentAt > 2500) {
+    typingSentAt = now; typingRoom = room;
+    rt.set(r, { at: rt.serverTimestamp(), hidden: myHidden("hideTyping") }).catch(() => {});
+    rt.onDisconnect(r).remove();
+  }
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(stopTyping, 3500);
+}
+function stopTyping() {
+  clearTimeout(typingTimer);
+  if (!rtdb || !typingRoom) return;
+  rt.remove(rt.ref(rtdb, `typing/${typingRoom}/${myUid()}`)).catch(() => {});
+  typingRoom = null; typingSentAt = 0;
+}
+function watchTyping(room) {
+  if (unsubTyping) { unsubTyping(); unsubTyping = null; }
+  typingMap = {};
+  if (!rtdb || room === "kainom") return;
+  unsubTyping = rt.onValue(rt.ref(rtdb, "typing/" + room), (s) => { typingMap = s.val() || {}; renderChatHeader(); setTimeout(renderChatHeader, 8200); });
+}
+function typingNames() {
+  const me = myUid(), now = Date.now();
+  return Object.entries(typingMap).filter(([u, v]) => u !== me && v && (!v.hidden || isOwnerMe()) && Math.abs(now - (v.at || 0)) < 8000).map(([u]) => nameOf(u));
+}
+
+/* ---------------- إشعارات فورية FCM ---------------- */
+async function initPush() {
+  if (!VAPID_KEY || !("serviceWorker" in navigator)) return;
+  try {
+    const m = await import(FB + "firebase-messaging.js");
+    if (!(await m.isSupported())) return;
+    const reg = await navigator.serviceWorker.ready;
+    const messaging = m.getMessaging(app);
+    const token = await m.getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+    if (token) await setDoc(doc(db, "users", myUid(), "fcmTokens", token), { at: serverTimestamp() });
+  } catch (e) { console.warn("FCM", e); }
+}
+async function pushToRoom(preview) {
+  if (!WORKER_URL || currentRoomType === "public" || currentRoomType === "ai") return;
+  try {
+    const me = myUid();
+    let uids = [];
+    if (currentRoomType === "dm") { const dm = currentDm(); uids = dm ? dm.members.filter((u) => u !== me) : []; }
+    else { const g = currentGroup(); uids = g ? (g.members || []).filter((u) => u !== me).slice(0, 25) : []; }
+    const tokens = [];
+    for (const u of uids) { const s = await getDocs(collection(db, "users", u, "fcmTokens")); s.forEach((d) => tokens.push(d.id)); }
+    if (!tokens.length) return;
+    const idToken = await auth.currentUser.getIdToken();
+    fetch(WORKER_URL + "/notify", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + idToken }, body: JSON.stringify({ tokens, title: currentRoomType === "dm" ? realName(me) : `${realName(me)} في ${($("ch-title").innerText || "")}`, body: preview, room: currentRoomId }) }).catch(() => {});
+  } catch (_) {}
 }
 
 /* =========================================================
    قايمة المحادثات (الكل / خاص / جروبات / مؤرشفة / إشراف) + بحث + تثبيت
    ========================================================= */
-const isDmMember = (dm) => dm.members.includes(currentUserDoc.uid);
-const otherOf = (dm) => dm.members.find((u) => u !== currentUserDoc.uid) || dm.members[0];
-
+const isDmMember = (dm) => dm.members.includes(myUid());
+const otherOf = (dm) => dm.members.find((u) => u !== myUid()) || dm.members[0];
 function isExpired(dm) {
   return dm.status === "accepted" && dm.ownerDm === true && dm.open !== true && !(dm.until && tsMs(dm.until) > Date.now());
 }
+function aiLast() {
+  const m = aiMsgs[aiMsgs.length - 1];
+  return m ? { at: m.at || 0, text: m.content.slice(0, 80), mine: m.role === "user" } : { at: 0, text: "اسألني أي حاجة 🤖", mine: false };
+}
 
 function buildItems() {
-  const me = currentUserDoc.uid;
+  const me = myUid();
   const items = [];
   const mk = (b) => {
     const p = chatPrefs[b.id] || {};
@@ -709,9 +1113,14 @@ function buildItems() {
       const mine = lastSender === me;
       preview = (b.type === "dm" && !mine) ? meta.lastMessage : `${mine ? "أنت" : nameOf(lastSender)}: ${meta.lastMessage}`;
     }
-    return { ...b, pinned: !!p.pinned, archived: !!p.archived, muted: !!p.muted, lastAt, unread, mention, preview, lastSender };
+    return { ...b, pinned: !!p.pinned, archived: !!p.archived, muted: !!p.muted, clearedAt: p.clearedAt || 0, lastAt, unread, mention, preview, lastSender };
   };
   items.push(mk({ id: "general", type: "public", mine: true, meta: generalMeta, title: "الجروب العام", createdAt: 0 }));
+  const al = aiLast();
+  const aiItem = mk({ id: "kainom", type: "ai", mine: true, meta: {}, title: "Kainom AI", createdAt: 0 });
+  aiItem.lastAt = al.at; aiItem.preview = al.text; aiItem.unread = false;
+  aiItem.pinned = chatPrefs.kainom ? !!chatPrefs.kainom.pinned : true;
+  items.push(aiItem);
   groupsCache.forEach((g) => items.push(mk({ id: g.id, type: "group", mine: (g.members || []).includes(me), meta: g, title: g.name, createdAt: tsMs(g.createdAt) })));
   dmsCache.forEach((dm) => {
     const mineDm = isDmMember(dm);
@@ -727,27 +1136,28 @@ function inTab(it) {
   if (currentTab === "archived") return it.archived;
   if (it.archived) return false;
   if (currentTab === "dm") return it.type === "dm";
-  if (currentTab === "group") return it.type !== "dm";
+  if (currentTab === "group") return it.type !== "dm" && it.type !== "ai";
   return true;
 }
 
 function itemTag(it) {
   if (it.type !== "dm" || !it.dm) return "";
-  const dm = it.dm, me = currentUserDoc.uid;
+  const dm = it.dm, me = myUid();
   if (!it.mine) return "";
   if (dm.status === "pending") return dm.requester === me ? `<span class="text-[10px] text-zinc-500">بانتظار الموافقة</span>` : `<span class="text-[10px] bg-amber-500 text-black font-bold px-1.5 rounded">طلب جديد</span>`;
   if (dm.status === "declined") return `<span class="text-[10px] text-zinc-500">مرفوض</span>`;
   if (!isOwnerMe() && isExpired(dm)) return `<span class="text-[10px] text-amber-400">انتهى الإذن</span>`;
   return "";
 }
-
 function itemAvatar(it) {
   if (it.type === "public") return iconAvatar("🌐");
+  if (it.type === "ai") return kainomAvatar(48);
   if (it.type === "group") return groupAvatar(it.title);
-  return avatarHtml(it.mine ? otherOf(it.dm) : it.dm.members[0], 48);
+  return avatarHtml(it.mine ? otherOf(it.dm) : it.dm.members[0], 48, true);
 }
 function itemTitleHtml(it) {
   if (it.type === "dm" && it.mine) return nameHtml(otherOf(it.dm));
+  if (it.type === "ai") return `<span class="text-violet-400 font-bold">Kainom AI</span> <span class="text-[10px] bg-violet-600 text-white rounded px-1">AI</span>`;
   return esc(it.title);
 }
 
@@ -775,17 +1185,16 @@ function rowHtml(it) {
 }
 
 function peopleCandidates() {
-  const me = currentUserDoc.uid;
+  const me = myUid();
   const hasDm = (uid) => dmsCache.some((d) => isDmMember(d) && d.members.includes(uid));
   return Object.entries(directory)
     .filter(([uid, d]) => uid !== me && (isOwnerMe() || d.discoverable !== false || hasDm(uid)))
     .map(([uid, d]) => ({ uid, ...d }));
 }
-
 function personRow(p) {
   return `
   <div data-person="${esc(p.uid)}" class="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-zinc-900 border-b border-zinc-900">
-    ${avatarHtml(p.uid, 44)}
+    ${avatarHtml(p.uid, 44, true)}
     <div class="flex-1 min-w-0">
       <div class="truncate font-semibold">${nameHtml(p.uid)}${p.discoverable === false ? ' <span class="text-[10px] text-zinc-500">(مخفي)</span>' : ""}</div>
       <div class="truncate text-xs text-zinc-500">${esc(p.about || "")}</div>
@@ -793,11 +1202,40 @@ function personRow(p) {
   </div>`;
 }
 
+let dlSent = {}, rrSent = {};
+function markDelivered(items) {
+  const me = myUid();
+  let changed = false;
+  items.forEach((it) => {
+    if (!it.mine || it.type === "public" || it.type === "ai" || !it.lastSender || it.lastSender === me) return;
+    if (it.dm && it.dm.status !== "accepted") return;
+    if (it.lastAt <= (dlSent[it.id] || 0)) return;
+    dlSent[it.id] = it.lastAt; changed = true;
+    setDoc(doc(db, "rooms", it.id, "receipts", me), { deliveredAt: serverTimestamp() }, { merge: true }).catch(() => {});
+  });
+  if (changed) { try { localStorage.setItem("venom_dl_" + me, JSON.stringify(dlSent)); } catch (_) {} }
+}
+function isMemberOf(id) {
+  const me = myUid();
+  const g = groupsCache.find((x) => x.id === id);
+  if (g) return (g.members || []).includes(me);
+  const d = dmsCache.find((x) => x.id === id);
+  return !!(d && d.members.includes(me) && d.status === "accepted");
+}
+function markRoomRead(id) {
+  if (document.hidden || !id || id === "general" || id === "kainom" || !isMemberOf(id)) return;
+  const last = lastMessages.length ? tsMs(lastMessages[lastMessages.length - 1].createdAt) : 0;
+  if (!last || rrSent[id] === last) return;
+  rrSent[id] = last;
+  setDoc(doc(db, "rooms", id, "receipts", myUid()), { deliveredAt: serverTimestamp(), readAt: serverTimestamp() }, { merge: true }).catch(() => {});
+}
+
 function renderChatList() {
   const el = $("chat-list");
   if (!el || !currentUserDoc) return;
   const items = buildItems();
   notifyChanges(items);
+  markDelivered(items);
   updateTabs(items);
   const q = normalize(searchQuery);
   let html = "";
@@ -822,22 +1260,21 @@ function renderChatList() {
         </div>`;
       });
     }
-    const list = items.filter(inTab).sort(sortItems);
+    const list = items.filter(inTab).sort(sortItems);   // الترتيب: الأحدث رسالة فوق دايمًا
     html += list.map(rowHtml).join("");
     if (!list.length && !groupInvites.length) {
       html += `<div class="p-6 text-center text-zinc-500 text-sm">${currentTab === "archived" ? "مفيش محادثات مؤرشفة" : currentTab === "supervise" ? "مفيش حاجة للإشراف" : "مفيش محادثات هنا"}</div>`;
     }
   }
   el.innerHTML = html;
-
   const unreadTotal = items.filter((i) => i.mine && i.unread && !i.archived && !i.muted).length;
   document.title = (unreadTotal ? `(${unreadTotal}) ` : "") + "VENOM Chat";
 }
 
 function sortItems(a, b) {
   if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
-  const ai = a.dm && a.mine && a.dm.status === "pending" && a.dm.requester !== currentUserDoc.uid;
-  const bi = b.dm && b.mine && b.dm.status === "pending" && b.dm.requester !== currentUserDoc.uid;
+  const ai = a.dm && a.mine && a.dm.status === "pending" && a.dm.requester !== myUid();
+  const bi = b.dm && b.mine && b.dm.status === "pending" && b.dm.requester !== myUid();
   if (ai !== bi) return ai ? -1 : 1;
   return (b.lastAt || 0) - (a.lastAt || 0);
 }
@@ -868,12 +1305,11 @@ function updateTabs(items) {
 }
 
 $("search-input").addEventListener("input", (e) => { searchQuery = e.target.value; renderChatList(); });
-
 $("chat-list").addEventListener("click", (e) => {
   const inv = e.target.closest("[data-inv]");
   if (inv) { handleGroupInvite(inv.dataset.inv, inv.dataset.do); return; }
   const menu = e.target.closest("[data-menu]");
-  if (menu) { e.stopPropagation(); openChatMenu(menu.closest("[data-chat]"), menu.getBoundingClientRect()); return; }
+  if (menu) { e.stopPropagation(); const row = menu.closest("[data-chat]"); showMenu(chatMenuItems(row.dataset.chat, row.dataset.type), menu.getBoundingClientRect()); return; }
   const person = e.target.closest("[data-person]");
   if (person) { $("search-input").value = ""; searchQuery = ""; startDm(person.dataset.person); return; }
   const row = e.target.closest("[data-chat]");
@@ -881,38 +1317,62 @@ $("chat-list").addEventListener("click", (e) => {
 });
 $("chat-list").addEventListener("contextmenu", (e) => {
   const row = e.target.closest("[data-chat]");
-  if (row) { e.preventDefault(); openChatMenu(row, { left: e.clientX, right: e.clientX, bottom: e.clientY, top: e.clientY }); }
+  if (row) { e.preventDefault(); showMenu(chatMenuItems(row.dataset.chat, row.dataset.type), { left: e.clientX, right: e.clientX, bottom: e.clientY, top: e.clientY }); }
 });
 let pressTimer = null;
 $("chat-list").addEventListener("touchstart", (e) => {
   const row = e.target.closest("[data-chat]");
   if (!row) return;
   const t = e.touches[0];
-  pressTimer = setTimeout(() => openChatMenu(row, { left: t.clientX, right: t.clientX, bottom: t.clientY, top: t.clientY }), 550);
+  pressTimer = setTimeout(() => showMenu(chatMenuItems(row.dataset.chat, row.dataset.type), { left: t.clientX, right: t.clientX, bottom: t.clientY, top: t.clientY }), 550);
 }, { passive: true });
 ["touchend", "touchmove", "touchcancel"].forEach((ev) => $("chat-list").addEventListener(ev, () => clearTimeout(pressTimer), { passive: true }));
 
 async function setPref(id, patch) {
   const cur = chatPrefs[id] || {};
   try {
-    await setDoc(doc(db, "users", currentUserDoc.uid, "chatPrefs", id), { pinned: !!cur.pinned, archived: !!cur.archived, muted: !!cur.muted, ...patch });
+    await setDoc(doc(db, "users", myUid(), "chatPrefs", id), { pinned: !!cur.pinned, archived: !!cur.archived, muted: !!cur.muted, clearedAt: cur.clearedAt || 0, ...patch });
   } catch (e) { showErr(e); }
 }
 
-function openChatMenu(row, rect) {
-  if (!row) return;
-  const id = row.dataset.chat, type = row.dataset.type;
+function chatMenuItems(id, type) {
   const p = chatPrefs[id] || {};
+  const pinned = id === "kainom" && !chatPrefs.kainom ? true : !!p.pinned;
   const items = [
-    { label: p.pinned ? "📌 إلغاء التثبيت" : "📌 تثبيت المحادثة", fn: () => setPref(id, { pinned: !p.pinned }) },
+    { label: pinned ? "📌 إلغاء التثبيت" : "📌 تثبيت المحادثة", fn: () => setPref(id, { pinned: !pinned }) },
     { label: p.archived ? "🗄 إلغاء الأرشفة" : "🗄 أرشفة", fn: () => setPref(id, { archived: !p.archived }) },
-    { label: p.muted ? "🔔 إلغاء الكتم" : "🔕 كتم الإشعارات", fn: () => setPref(id, { muted: !p.muted }) }
+    { label: p.muted ? "🔔 إلغاء الكتم" : "🔕 كتم الإشعارات", fn: () => setPref(id, { muted: !p.muted }) },
+    { label: "🖼 خلفية المحادثة دي", fn: () => openWallpaperPicker("chat", id, type) }
   ];
+  if (type === "ai") items.push({ label: "🧹 مسح محادثة الذكاء الاصطناعي", danger: true, fn: clearAi });
+  else if (type === "public") {
+    items.push({ label: "🧹 مسح الرسائل عندي بس", danger: true, fn: () => clearForMe(id) });
+    if (isOwnerMe()) items.push({ label: "🧨 مسح كل الرسائل للجميع", danger: true, fn: wipePublic });
+  } else items.push({ label: "🧹 مسح الرسائل عندي", danger: true, fn: () => clearForMe(id) });
   if (type === "dm") {
     const dm = dmsCache.find((d) => d.id === id);
     if (dm && isDmMember(dm)) items.push({ label: "👤 عرض الملف", fn: () => openProfile(otherOf(dm)) });
   }
-  showMenu(items, rect);
+  return items;
+}
+function clearForMe(id) {
+  if (!confirm("تمسح الرسائل الحالية عندك بس؟ باقي الناس هتفضل تشوفها.")) return;
+  setPref(id, { clearedAt: Date.now() }).then(() => { if (currentRoomId === id) renderMessages(); toast("اتمسحت عندك"); });
+}
+async function wipePublic() {
+  if (!confirm("⚠️ هتمسح كل رسائل الجروب العام نهائيًا لكل الناس. متأكد؟")) return;
+  try {
+    let n = 0;
+    for (;;) {
+      const s = await getDocs(query(collection(db, "rooms", "general", "messages"), limit(400)));
+      if (s.empty) break;
+      const b = writeBatch(db);
+      s.forEach((d) => b.delete(d.ref));
+      await b.commit(); n += s.size;
+    }
+    await deleteDoc(doc(db, "rooms", "general")).catch(() => {});
+    toast(`اتمسح ${n} رسالة للجميع`);
+  } catch (e) { showErr(e); }
 }
 
 /* ---------------- قايمة منبثقة عامة ---------------- */
@@ -939,12 +1399,13 @@ function hideMenu() { $("ctx-menu").classList.add("hidden"); }
 document.addEventListener("pointerdown", (e) => { if (!e.target.closest("#ctx-menu")) hideMenu(); });
 
 /* =========================================================
-   فتح محادثة
+   فتح / إغلاق محادثة
    ========================================================= */
 function openChat(id, type) {
+  stopTyping();
   currentRoomId = id;
   currentRoomType = type;
-  replyTo = null; editing = null; mentionMap = {};
+  replyTo = null; editing = null; mentionMap = {}; receipts = {};
   $("message-input").value = "";
   autosize();
   updateReplyBar();
@@ -953,38 +1414,55 @@ function openChat(id, type) {
   document.body.dataset.view = "chat";
   if (!(history.state && history.state.chat)) { try { history.pushState({ chat: true }, ""); } catch (_) {} }
   renderChatHeader(); renderRoomBar(); renderComposerState();
-  hideEmoji();
-  loadMessages();
+  hideEmoji(); applyWall();
+  if (type === "ai") { if (unsubMessages) { unsubMessages(); unsubMessages = null; } if (unsubReceipts) { unsubReceipts(); unsubReceipts = null; } watchTyping("kainom"); renderMessages(); scrollNext = true; }
+  else { loadMessages(); watchReceipts(id); watchTyping(id); }
   markRead(id);
   renderChatList();
 }
 window.openChat = openChat;
 
 function closeChatUI() {
-  if (unsubMessages) { unsubMessages(); unsubMessages = null; }
-  currentRoomId = null; currentRoomType = null; lastMessages = [];
+  stopTyping();
+  [unsubMessages, unsubReceipts, unsubTyping].forEach((u) => { try { u && u(); } catch (_) {} });
+  unsubMessages = unsubReceipts = unsubTyping = null;
+  currentRoomId = null; currentRoomType = null; lastMessages = []; receipts = {}; typingMap = {};
   $("chat-view").classList.add("hidden");
   $("empty-state").classList.remove("hidden");
   document.body.dataset.view = "list";
   renderChatList();
 }
 window.addEventListener("popstate", () => { if (document.body.dataset.view === "chat") closeChatUI(); });
-$("back-btn").onclick = () => { if (history.state && history.state.chat) history.back(); else closeChatUI(); };
+const exitChat = () => { if (history.state && history.state.chat) history.back(); else closeChatUI(); };
+$("back-btn").onclick = exitChat;
+$("ch-close-btn").onclick = exitChat;
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && currentRoomId && !e.target.closest("textarea, input") && $("viewer").classList.contains("hidden") && $("story-viewer").classList.contains("hidden")) exitChat(); });
+$("ch-menu-btn").onclick = (e) => { if (currentRoomId) showMenu(chatMenuItems(currentRoomId, currentRoomType), e.currentTarget.getBoundingClientRect()); };
 
 function markRead(id) {
-  const items = buildItems();
-  const it = items.find((x) => x.id === id);
+  const it = buildItems().find((x) => x.id === id);
   lastRead[id] = Math.max(Date.now(), it ? it.lastAt : 0);
-  try { localStorage.setItem("venom_lr_" + currentUserDoc.uid, JSON.stringify(lastRead)); } catch (_) {}
+  try { localStorage.setItem("venom_lr_" + myUid(), JSON.stringify(lastRead)); } catch (_) {}
+  renderChatList();
+  markRoomRead(id);
 }
 
-function currentGroup() { return groupsCache.find((g) => g.id === currentRoomId); }
-function currentDm() { return dmsCache.find((d) => d.id === currentRoomId); }
+const currentGroup = () => groupsCache.find((g) => g.id === currentRoomId);
+const currentDm = () => dmsCache.find((d) => d.id === currentRoomId);
 
+function lastSeenText(uid) {
+  const p = presenceOf(uid);
+  if (!p) return "";
+  if (p.online) return "🟢 متصل الآن";
+  const t = tsMs(p.last);
+  return t ? "آخر ظهور " + fmtListTime(t) + " " + fmtTime(t) : "";
+}
 function renderChatHeader() {
   if (!currentRoomId) return;
   let av = "", title = "", sub = "";
-  if (currentRoomType === "public") {
+  if (currentRoomType === "ai") {
+    av = kainomAvatar(42); title = `<span class="text-violet-400">Kainom AI</span>`; sub = aiBusy ? "بيفكر…" : "مساعدك الذكي";
+  } else if (currentRoomType === "public") {
     av = iconAvatar("🌐", 42); title = esc("الجروب العام"); sub = publicOpen ? "أي حد دخل الموقع" : "🔒 مقفول حاليًا (للقراءة فقط)";
   } else if (currentRoomType === "group") {
     const g = currentGroup();
@@ -995,17 +1473,19 @@ function renderChatHeader() {
     if (!dm) return;
     const mineDm = isDmMember(dm);
     const other = mineDm ? otherOf(dm) : dm.members[0];
-    av = avatarHtml(other, 42);
+    av = avatarHtml(other, 42, true);
     title = mineDm ? nameHtml(other) : esc(`${nameOf(dm.members[0])} ↔ ${nameOf(dm.members[1])}`);
-    sub = mineDm ? ((directory[other] && directory[other].about) || "") : "وضع الإشراف";
+    sub = mineDm ? (lastSeenText(other) || ((directory[other] && directory[other].about) || "")) : "وضع الإشراف";
   }
+  const tn = currentRoomType === "ai" ? [] : typingNames();
   $("ch-avatar").innerHTML = av;
   $("ch-title").innerHTML = title;
-  $("ch-sub").innerText = sub;
+  $("ch-sub").innerHTML = tn.length ? `<span class="text-emerald-400">${esc(tn.slice(0, 2).join("، "))} ${currentRoomType === "dm" ? "بيكتب" : "بيكتبوا"}<span class="typing-dots"><span>.</span><span>.</span><span>.</span></span></span>` : esc(sub);
 }
 function openChatInfo() {
   if (currentRoomType === "group") openGroupInfo(currentRoomId);
   else if (currentRoomType === "dm") { const dm = currentDm(); if (dm && isDmMember(dm)) openProfile(otherOf(dm)); }
+  else if (currentRoomType === "ai") openKainomInfo();
 }
 $("ch-info").onclick = openChatInfo;
 $("ch-info-btn").onclick = openChatInfo;
@@ -1016,9 +1496,9 @@ function renderRoomBar() {
   if (!bar) return;
   bar.innerHTML = "";
   bar.classList.add("hidden");
-  if (!currentRoomId) return;
+  if (!currentRoomId || currentRoomType === "ai") return;
   const say = (t, cls = "text-zinc-300") => { const s = document.createElement("span"); s.className = cls + " flex-1"; s.innerText = t; bar.appendChild(s); bar.classList.remove("hidden"); };
-  const add = (t, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.innerText = t; b.onclick = fn; bar.appendChild(b); bar.classList.remove("hidden"); };
+  const add = (t, cls, fn) => { bar.appendChild(mkBtn(t, cls, fn)); bar.classList.remove("hidden"); };
 
   if (currentRoomType === "public") {
     if (!publicOpen) say(isPriv() ? "🔒 الجروب العام مقفول. إنت بس والأدمن بتكتبوا." : "🔒 الجروب العام مقفول حاليًا، للقراءة فقط.", "text-amber-400");
@@ -1026,12 +1506,12 @@ function renderRoomBar() {
   }
   if (currentRoomType === "group") {
     const g = currentGroup();
-    if (g && !(g.members || []).includes(currentUserDoc.uid)) say("👁 وضع الإشراف: إنت مش عضو في الجروب ده.", "text-amber-400");
+    if (g && !(g.members || []).includes(myUid())) say("👁 وضع الإشراف: إنت مش عضو في الجروب ده.", "text-amber-400");
     return;
   }
   const dm = currentDm();
   if (!dm) return;
-  const me = currentUserDoc.uid;
+  const me = myUid();
   if (!isDmMember(dm)) { say(`👁 وضع الإشراف: محادثة بين ${nameOf(dm.members[0])} و${nameOf(dm.members[1])} (قراءة فقط)`, "text-amber-400"); return; }
   const other = otherOf(dm);
 
@@ -1067,12 +1547,32 @@ function renderRoomBar() {
     else { say("الإذن خلص. لازم يطلب تاني.", "text-zinc-400"); add("⭐ اجعلها مفتوحة", "btn-gold", () => updateDoc(doc(db, "dms", dm.id), { open: true }).catch(showErr)); }
   }
 }
-
 function acceptDm(dm, mode) {
   const patch = { status: "accepted" };
   if (mode === "open") patch.open = true;
   if (mode === "day") patch.until = Timestamp.fromMillis(Date.now() + 24 * 3600 * 1000);
   return updateDoc(doc(db, "dms", dm.id), patch).catch(showErr);
+}
+
+/* ---------------- إشعارات داخل التطبيق ---------------- */
+function notifyChanges(items) {
+  const me = myUid();
+  items.forEach((it) => {
+    if (!it.mine || it.type === "ai") return;
+    const prev = seenLast[it.id];
+    if (prev === undefined) { seenLast[it.id] = it.lastAt; return; }
+    if (it.lastAt > prev) {
+      seenLast[it.id] = it.lastAt;
+      if (!it.lastSender || it.lastSender === me || it.muted || it.archived) return;
+      if (currentRoomId === it.id && !document.hidden) return;
+      const title = it.type === "dm" ? nameOf(it.lastSender) : `${nameOf(it.lastSender)} في ${it.title}`;
+      const body = it.mention ? `ذكرك: ${(it.meta.lastMessage || "")}` : (it.meta.lastMessage || "");
+      toast(`${it.mention ? "@ " : ""}${title}: ${body}`.slice(0, 120));
+      if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+        try { new Notification(title, { body, icon: "icon-192.png", tag: it.id }); } catch (_) {}
+      }
+    }
+  });
 }
 
 /* =========================================================
@@ -1095,14 +1595,32 @@ function loadMessages() {
     $("chat-messages").innerHTML = `<p class="text-red-400 text-sm p-3">مقدرتش أحمّل الرسائل: ${esc(err.code || err.message)}</p>`;
   });
 }
+function watchReceipts(id) {
+  if (unsubReceipts) { unsubReceipts(); unsubReceipts = null; }
+  receipts = {};
+  if (id === "general") return;
+  unsubReceipts = onSnapshot(collection(db, "rooms", id, "receipts"), (snap) => {
+    receipts = {};
+    snap.forEach((d) => { const v = d.data(); receipts[d.id] = { d: tsMs(v.deliveredAt), r: tsMs(v.readAt) }; });
+    if (currentRoomId === id) renderMessages();
+  }, () => {});
+}
+
+const visibleMessages = () => {
+  const cl = (chatPrefs[currentRoomId] || {}).clearedAt || 0;
+  return cl ? lastMessages.filter((m) => tsMs(m.createdAt) > cl) : lastMessages;
+};
 
 function renderMessages() {
   const box = $("chat-messages");
   if (!box) return;
   const stick = scrollNext || (box.scrollHeight - box.scrollTop - box.clientHeight < 140);
   box.innerHTML = "";
+  if (currentRoomType === "ai") { renderAi(box); box.scrollTop = box.scrollHeight; return; }
   let lastDay = "";
-  lastMessages.forEach((m) => {
+  const list = visibleMessages();
+  if (!list.length && currentRoomId) box.innerHTML = `<p class="text-center text-zinc-500 text-sm mt-8">مفيش رسايل لسه. ابدأ إنت 👋</p>`;
+  list.forEach((m) => {
     const t = tsMs(m.createdAt);
     const day = t ? new Date(t).toDateString() : "";
     if (day && day !== lastDay) {
@@ -1115,7 +1633,7 @@ function renderMessages() {
     box.appendChild(buildMsg(m));
   });
   if (stick) box.scrollTop = box.scrollHeight;
-  if (lastMessages.length) scrollNext = false;
+  if (list.length) scrollNext = false;
 }
 
 function formatText(m, kind) {
@@ -1130,8 +1648,136 @@ function formatText(m, kind) {
   return html;
 }
 
+/* ---------------- علامات التسليم والقراءة ---------------- */
+function recipientsFor(m) {
+  if (currentRoomType === "dm") { const dm = currentDm(); return dm ? dm.members.filter((u) => u !== m.senderUid) : []; }
+  if (currentRoomType === "group") { const g = currentGroup(); return g ? (g.members || []).filter((u) => u !== m.senderUid) : []; }
+  return [];
+}
+function userState(u, t) {
+  const r = receipts[u] || {};
+  const hide = (directory[u] || {}).hideReceipts && !isOwnerMe();
+  const seen = !hide && !!t && r.r >= t;
+  const del = !!t && ((r.d >= t) || (r.r >= t));
+  return seen ? 2 : del ? 1 : 0;
+}
+function msgState(m) {
+  const t = tsMs(m.createdAt), rs = recipientsFor(m);
+  if (!rs.length) return -1;
+  return Math.min(...rs.map((u) => userState(u, t)));
+}
+function tickHtml(m) {
+  const s = msgState(m);
+  if (s < 0) return "";
+  return s === 2 ? `<span class="tick tick-seen">✓✓</span>` : s === 1 ? `<span class="tick">✓✓</span>` : `<span class="tick">✓</span>`;
+}
+
+/* ---------------- الوسائط ---------------- */
+const KIND_LABEL = { image: "📷 صورة", video: "🎞 فيديو", audio: "🎤 رسالة صوتية", file: "📄 ملف" };
+function safeUrl(u) {
+  if (typeof u !== "string" || !u) return "";
+  if (/^https:\/\/(firebasestorage\.googleapis\.com|[a-z0-9-]+\.firebasestorage\.app|storage\.googleapis\.com)\//.test(u)) return u;
+  if (/^data:(image|audio|video)\/[\w.+-]+(;codecs=[\w.,-]+)?;base64,/.test(u.slice(0, 90))) return u;
+  return "";
+}
+const mediaSrc = (md) => safeUrl((md && (md.url || md.inline)) || "");
+function fmtSize(n) { return n > 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round((n || 0) / 1024)) + " KB"; }
+function fmtDur(s) { s = Math.round(s || 0); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
+
+let viewerClose = null;
+function openViewer(kind, src, note, onClose, protect) {
+  const body = $("viewer-body");
+  body.innerHTML = "";
+  let el;
+  if (kind === "video") { el = document.createElement("video"); el.controls = true; el.autoplay = true; el.playsInline = true; if (protect) el.setAttribute("controlsList", "nodownload"); el.className = "max-h-full max-w-full"; }
+  else if (kind === "audio") { el = document.createElement("audio"); el.controls = true; el.autoplay = true; el.className = "w-full max-w-md"; }
+  else { el = document.createElement("img"); el.className = "max-h-full max-w-full object-contain"; el.draggable = false; }
+  el.src = src;
+  if (protect) el.oncontextmenu = () => false;
+  body.appendChild(el);
+  $("viewer-note").innerText = note || "";
+  $("viewer").classList.remove("hidden");
+  viewerClose = onClose || null;
+}
+function closeViewer() {
+  $("viewer-body").querySelectorAll("video,audio").forEach((x) => { try { x.pause(); } catch (_) {} });
+  $("viewer-body").innerHTML = "";
+  $("viewer").classList.add("hidden");
+  const f = viewerClose; viewerClose = null;
+  if (f) f();
+}
+$("viewer-close").onclick = closeViewer;
+
+async function ownerSrc(m) {
+  const md = m.media || {};
+  if (md.inline) return safeUrl(md.inline);
+  if (md.path && storage) { try { return await st.getDownloadURL(st.ref(storage, md.path.replace(/^media\//, "vault/"))); } catch (_) {} }
+  return safeUrl(md.url || "");
+}
+async function openViewOnce(m) {
+  const me = myUid(), owner = isOwnerMe();
+  const src = owner ? await ownerSrc(m) : mediaSrc(m.media);
+  if (!src) { toast("الملف مش متاح (اتمسح أو مش لسه اترفع)"); return; }
+  openViewer(m.kind, src, owner ? "عرض المشرف (مش بيتسجل كمشاهدة)" : "لمرة واحدة — هتختفي بعد الإغلاق", owner ? null : async () => {
+    try { await updateDoc(doc(db, "rooms", currentRoomId, "messages", m.id), { [`viewedBy.${me}`]: serverTimestamp() }); } catch (e) { console.warn(e); }
+    if (m.media && m.media.path && storage) st.deleteObject(st.ref(storage, m.media.path)).catch(() => {});
+  }, true);
+}
+
+function mediaNode(m, md, opts = {}) {
+  const wrap = document.createElement("div");
+  wrap.className = "my-1";
+  const src = mediaSrc(md);
+  const kind = m.kind || opts.kind;
+  if (!src) { wrap.innerHTML = `<div class="text-xs opacity-70">${KIND_LABEL[kind] || "ملف"} (غير متاح)</div>`; return wrap; }
+  if (kind === "image") {
+    const img = document.createElement("img");
+    img.src = src; img.loading = "lazy"; img.className = "rounded-lg max-h-72 max-w-full object-cover cursor-zoom-in";
+    img.onclick = (e) => { e.stopPropagation(); openViewer("image", src, md.name || ""); };
+    wrap.appendChild(img);
+  } else if (kind === "video") {
+    const v = document.createElement("video");
+    v.src = src; v.controls = true; v.preload = "metadata"; v.playsInline = true; v.className = "rounded-lg max-h-72 max-w-full";
+    v.onclick = (e) => e.stopPropagation();
+    wrap.appendChild(v);
+  } else if (kind === "audio") {
+    const a = document.createElement("audio");
+    a.src = src; a.controls = true; a.preload = "metadata"; a.className = "max-w-full"; a.style.minWidth = "13rem";
+    a.onclick = (e) => e.stopPropagation();
+    wrap.appendChild(a);
+    if (md.dur) { const d = document.createElement("div"); d.className = "text-[10px] opacity-60"; d.innerText = "⏱ " + fmtDur(md.dur); wrap.appendChild(d); }
+  } else {
+    const a = document.createElement("a");
+    a.href = src; a.target = "_blank"; a.rel = "noopener noreferrer"; a.download = md.name || "file";
+    a.className = "flex items-center gap-2 underline text-sm";
+    a.innerHTML = `📄 <span class="truncate max-w-[12rem]">${esc(md.name || "ملف")}</span><span class="text-[10px] opacity-60">${fmtSize(md.size)}</span>`;
+    a.onclick = (e) => e.stopPropagation();
+    wrap.appendChild(a);
+  }
+  return wrap;
+}
+
+function viewOnceNode(m) {
+  const me = myUid();
+  const viewed = !!(m.viewedBy && Object.keys(m.viewedBy).length);
+  const dm = currentDm();
+  const recipient = m.senderUid !== me && dm && isDmMember(dm);
+  const wrap = document.createElement("div");
+  wrap.className = "my-1 text-sm";
+  const lbl = KIND_LABEL[m.kind] || "وسائط";
+  if (m.senderUid === me) wrap.innerHTML = `🔥 ${lbl} <b>لمرة واحدة</b> — ${viewed ? "✔ اتفتحت" : "لسه ما اتفتحتش"}`;
+  else if (isOwnerMe() || (recipient && !viewed)) {
+    const b = mkBtn(recipient && !isOwnerMe() ? `👁 اضغط لعرض ${lbl} (مرة واحدة)` : `👁 عرض ${lbl} (مشرف)${viewed ? " — المستلم فتحها" : ""}`, "btn-gold", (e) => { e.stopPropagation(); openViewOnce(m); });
+    wrap.appendChild(b);
+  } else if (recipient && viewed) wrap.innerHTML = `✔ ${lbl} لمرة واحدة — اتفتحت`;
+  else wrap.innerHTML = `🔒 ${lbl} لمرة واحدة`;
+  return wrap;
+}
+
+/* ---------------- بناء الرسالة ---------------- */
+let lastTap = { mid: null, t: 0 };
 function buildMsg(m) {
-  const me = currentUserDoc.uid;
+  const me = myUid();
   const mine = m.senderUid === me;
   const owner = isOwnerUid(m.senderUid) || (mine && isOwnerMe());
   const deleted = !!m.deleted;
@@ -1141,52 +1787,54 @@ function buildMsg(m) {
 
   const row = document.createElement("div");
   row.className = "flex gap-2 items-end fade-in " + (mine ? "justify-start" : "justify-end");
+  row.dataset.row = m.id;
 
-  let palette;
-  if (deleted) palette = "bg-zinc-900 text-zinc-500 italic";
-  else if (sticker) palette = "";
-  else if (owner) palette = "bg-gradient-to-br from-amber-200 via-amber-400 to-yellow-500 text-black ring-1 ring-white/70 shadow-[0_0_18px_rgba(245,158,11,.25)]";
-  else if (mine) palette = "bg-zinc-950 text-white ring-1 ring-zinc-500";
-  else palette = "bg-white text-zinc-900";
-
+  const pal = deleted ? "b-del" : sticker ? "" : owner ? "b-owner" : mine ? "b-mine" : "b-other";
   const col = document.createElement("div");
   col.className = "flex flex-col max-w-[82%] md:max-w-[62%] " + (mine ? "items-start" : "items-end");
 
   const b = document.createElement("div");
-  b.className = `rounded-2xl px-3 py-1.5 cursor-pointer ${palette} ${mentioned && !deleted ? "outline outline-2 outline-sky-400" : ""}`;
+  b.className = `rounded-2xl px-3 py-1.5 cursor-pointer ${pal} ${mentioned && !deleted ? "outline outline-2 outline-sky-400" : ""}`;
   b.dataset.mid = m.id;
 
   let inner = "";
-  if (!mine && currentRoomType !== "dm") {
-    const nameCls = owner ? "" : "text-zinc-500";
-    inner += `<div class="text-xs mb-0.5 ${nameCls}">${nameHtml(m.senderUid, owner)}</div>`;
-  }
+  if (!mine && currentRoomType !== "dm") inner += `<div class="text-xs mb-0.5 ${owner ? "" : "opacity-70"}">${nameHtml(m.senderUid, owner || !deleted)}</div>`;
   if (deleted) {
     inner += `<div class="text-sm">🚫 تم حذف الرسالة</div>`;
   } else {
     if (m.replyTo) {
       const q = lastMessages.find((x) => x.id === m.replyTo);
-      const qb = kind === "gold" ? "bg-black/10 border-black/40" : kind === "mine" ? "bg-white/10 border-white/50" : "bg-zinc-100 border-zinc-400";
-      inner += `<div class="${qb} border-r-4 rounded px-2 py-1 mb-1 text-xs opacity-90" data-goto="${esc(m.replyTo)}">
-        <div class="font-bold">${q ? esc(nameOf(q.senderUid)) : "رسالة"}</div>
-        <div class="truncate">${q ? (q.deleted ? "🚫 رسالة محذوفة" : esc(q.kind === "sticker" ? "ملصق " + q.text : q.text.slice(0, 80))) : "رسالة قديمة"}</div></div>`;
+      const qb = kind === "gold" ? "bg-black/10 border-black/40" : kind === "mine" ? "bg-white/10 border-white/50" : "bg-zinc-100 border-zinc-400 text-zinc-800";
+      const qt = q ? (q.deleted ? "🚫 رسالة محذوفة" : q.media || q.kind === "image" ? (KIND_LABEL[q.kind] || "وسائط") : esc(q.kind === "sticker" ? "ملصق " + q.text : q.text.slice(0, 80))) : "رسالة قديمة";
+      inner += `<div class="${qb} border-r-4 rounded px-2 py-1 mb-1 text-xs opacity-90" data-goto="${esc(m.replyTo)}"><div class="font-bold">${q ? esc(nameOf(q.senderUid)) : "رسالة"}</div><div class="truncate">${qt}</div></div>`;
     }
     if (sticker) inner += `<div class="text-6xl leading-none py-1">${esc(m.text)}</div>`;
-    else inner += `<div class="msg-text text-[15px]">${formatText(m, kind)}</div>`;
+    else if (m.text) inner += `<div class="msg-text text-[15px]">${formatText(m, kind)}</div>`;
   }
   const t = tsMs(m.createdAt);
-  const tcls = sticker ? "text-zinc-500" : "opacity-60";
-  inner += `<div class="flex items-center gap-1 justify-end text-[10px] ${tcls} mt-0.5">${m.edited && !deleted ? "معدلة · " : ""}${fmtTime(t)}</div>`;
+  const tcls = sticker ? "text-zinc-500" : "opacity-70";
+  const ticks = mine && !deleted ? tickHtml(m) : "";
+  const ver = isOwnerMe() && (m.edited || deleted) ? ` <span data-ver class="underline cursor-pointer text-[10px] ${owner ? "" : "text-amber-500"}">🔍 ${deleted ? "الأصل" : "النسخ"}</span>` : "";
+  const foot = `<div class="flex items-center gap-1 justify-end text-[10px] ${tcls} mt-0.5">${m.edited && !deleted ? "معدلة · " : ""}${fmtTime(t)} ${ticks}${ver}</div>`;
   b.innerHTML = inner;
+  if (!deleted && m.media !== undefined && m.kind !== "sticker") {
+    const node = m.viewOnce ? viewOnceNode(m) : mediaNode(m, m.media);
+    b.appendChild(node);
+  }
+  b.insertAdjacentHTML("beforeend", foot);
+
   b.onclick = (e) => {
-    if (e.target.closest("a")) return;
+    if (e.target.closest("a, video, audio, button")) return;
+    if (e.target.closest("[data-ver]")) { openVersions(m); return; }
     const g = e.target.closest("[data-goto]");
     if (g) { const el = $("chat-messages").querySelector(`[data-mid="${CSS.escape(g.dataset.goto)}"]`); if (el) { el.scrollIntoView({ block: "center", behavior: "smooth" }); el.classList.add("outline", "outline-2", "outline-amber-400"); setTimeout(() => el.classList.remove("outline", "outline-2", "outline-amber-400"), 1400); } return; }
+    const now = Date.now();
+    if (lastTap.mid === m.id && now - lastTap.t < 320) { lastTap = { mid: null, t: 0 }; hideMenu(); if (!deleted && canSendNow().ok) setReply(m); return; }   // ضغطتين = رد
+    lastTap = { mid: m.id, t: now };
     openMsgMenu(m, b);
   };
   col.appendChild(b);
 
-  // التفاعلات
   const rx = m.reactions || {};
   const counts = {};
   Object.values(rx).forEach((e) => { counts[e] = (counts[e] || 0) + 1; });
@@ -1202,46 +1850,138 @@ function buildMsg(m) {
     });
     col.appendChild(r);
   }
-
-  if (mine) row.appendChild(col);
-  else { row.appendChild(col); const av = document.createElement("div"); av.className = "shrink-0 mb-1"; av.innerHTML = avatarHtml(m.senderUid, 30); row.appendChild(av); }
+  row.appendChild(col);
+  if (!mine) { const av = document.createElement("div"); av.className = "shrink-0 mb-1"; av.innerHTML = avatarHtml(m.senderUid, 30); row.appendChild(av); }
   return row;
 }
 
+/* سحب الرسالة يمين/شمال = رد */
+(function () {
+  const box = $("chat-messages");
+  let sx = 0, sy = 0, sid = null;
+  box.addEventListener("touchstart", (e) => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; const r = e.target.closest("[data-mid]"); sid = r ? r.dataset.mid : null; }, { passive: true });
+  box.addEventListener("touchend", (e) => {
+    if (!sid) return;
+    const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) > 70 && Math.abs(dy) < 35) {
+      const m = lastMessages.find((x) => x.id === sid);
+      if (m && !m.deleted && canSendNow().ok) { setReply(m); if (navigator.vibrate) navigator.vibrate(15); }
+    }
+    sid = null;
+  }, { passive: true });
+})();
+
+/* ---------------- التفاعلات ---------------- */
 const QUICK_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 function toggleReaction(m, emoji) {
-  const me = currentUserDoc.uid;
-  const ref = doc(db, "rooms", currentRoomId, "messages", m.id);
+  const me = myUid();
   const has = (m.reactions || {})[me] === emoji;
-  updateDoc(ref, { [`reactions.${me}`]: has ? deleteField() : emoji }).catch(showErr);
+  updateDoc(doc(db, "rooms", currentRoomId, "messages", m.id), { [`reactions.${me}`]: has ? deleteField() : emoji }).catch(showErr);
+}
+function openReactionPicker(m) {
+  const g = document.createElement("div");
+  g.className = "grid gap-1";
+  g.style.gridTemplateColumns = "repeat(auto-fill, minmax(2.6rem, 1fr))";
+  EMOJIS.forEach((e) => { const b = document.createElement("button"); b.className = "text-2xl hover:bg-zinc-800 rounded-lg py-1"; b.innerText = e; b.onclick = () => { closePanel("gen"); toggleReaction(m, e); }; g.appendChild(b); });
+  openGen("اختر تفاعل", g);
 }
 
 function openMsgMenu(m, anchor) {
-  const me = currentUserDoc.uid;
+  const me = myUid();
   const mine = m.senderUid === me;
   const deleted = !!m.deleted;
   const row = document.createElement("div");
-  row.className = "flex justify-around px-2 py-2 border-b border-zinc-800 text-xl";
-  if (!deleted) QUICK_REACTIONS.forEach((e) => {
-    const b = document.createElement("button");
-    b.innerText = e; b.className = "hover:scale-125 transition";
-    b.onclick = () => { hideMenu(); toggleReaction(m, e); };
-    row.appendChild(b);
-  });
+  row.className = "flex justify-around items-center px-2 py-2 border-b border-zinc-800 text-xl";
+  if (!deleted) {
+    QUICK_REACTIONS.forEach((e) => {
+      const b = document.createElement("button");
+      b.innerText = e; b.className = "hover:scale-125 transition";
+      b.onclick = () => { hideMenu(); toggleReaction(m, e); };
+      row.appendChild(b);
+    });
+    const plus = document.createElement("button");
+    plus.innerText = "＋"; plus.className = "text-base bg-zinc-800 rounded-full w-7 h-7 leading-none";
+    plus.onclick = () => { hideMenu(); openReactionPicker(m); };
+    row.appendChild(plus);
+  }
   const items = [];
-  if (!deleted && canSendNow().ok) items.push({ label: "↩ رد", fn: () => setReply(m) });
-  if (!deleted && m.kind !== "sticker") items.push({ label: "📋 نسخ", fn: () => navigator.clipboard && navigator.clipboard.writeText(m.text).then(() => toast("اتنسخت")) });
-  if (mine && !deleted && m.kind !== "sticker" && canSendNow().ok) items.push({ label: "✎ تعديل", fn: () => startEdit(m) });
-  if (!deleted && (mine || isPriv())) items.push({ label: "🗑 حذف", danger: true, fn: () => { if (confirm("تحذف الرسالة؟")) updateDoc(doc(db, "rooms", currentRoomId, "messages", m.id), { deleted: true, text: "" }).catch(showErr); } });
+  const can = canSendNow().ok;
+  if (!deleted && can) items.push({ label: "↩ رد", fn: () => setReply(m) });
+  if (!deleted && m.text && m.kind !== "sticker") items.push({ label: "📋 نسخ", fn: () => navigator.clipboard && navigator.clipboard.writeText(m.text).then(() => toast("اتنسخت")) });
+  if (!deleted && (mine || isOwnerMe()) && currentRoomType !== "public") items.push({ label: "ℹ معلومات (مين شاف)", fn: () => openMsgInfo(m) });
+  if (mine && !deleted && (!m.kind || m.kind === "text") && can) items.push({ label: "✎ تعديل", fn: () => startEdit(m) });
+  if (!deleted && (mine || isPriv())) items.push({ label: "🗑 حذف", danger: true, fn: () => deleteMsg(m) });
+  if (isOwnerMe() && (m.edited || deleted)) items.push({ label: "🔍 النسخ الأصلية", fn: () => openVersions(m) });
   if (!mine && !deleted) items.push({ label: "⚑ إبلاغ عن الشخص", danger: true, fn: () => reportUser(m.senderUid) });
   if (!items.length && deleted) return;
   showMenu(items, anchor.getBoundingClientRect(), deleted ? null : row);
 }
 
+/* ---------------- حذف / تعديل مع حفظ النسخة الأصلية ---------------- */
+const NOTICE_EDIT = "تنويه: النسخة الأصلية للرسالة بتتسجل ويقدر يشوفها صاحب المنصة (للحماية والإشراف).";
+async function deleteMsg(m) {
+  if (!confirm("تحذف الرسالة؟\n\n" + NOTICE_EDIT)) return;
+  const rev = (m.rev || 0) + 1, me = myUid();
+  const ver = { text: m.text || "", by: me, at: serverTimestamp(), type: "delete" };
+  if (m.media) ver.media = m.media;
+  try {
+    const b = writeBatch(db);
+    b.set(doc(db, "rooms", currentRoomId, "messages", m.id, "versions", String(rev)), ver);
+    b.update(doc(db, "rooms", currentRoomId, "messages", m.id), { text: "", deleted: true, rev, media: deleteField() });
+    await b.commit();
+  } catch (e) { showErr(e); }
+}
+async function commitEdit(text) {
+  const m = editing, me = myUid();
+  const rev = (m.rev || 0) + 1;
+  const b = writeBatch(db);
+  b.set(doc(db, "rooms", currentRoomId, "messages", m.id, "versions", String(rev)), { text: m.text, by: me, at: serverTimestamp(), type: "edit" });
+  b.update(doc(db, "rooms", currentRoomId, "messages", m.id), { text, edited: true, rev });
+  await b.commit();
+}
+async function openVersions(m) {
+  if (!isOwnerMe()) return;
+  openGen("🔍 النسخ الأصلية للرسالة", `<p class="text-zinc-500 text-sm">بيحمّل…</p>`);
+  try {
+    const s = await getDocs(query(collection(db, "rooms", currentRoomId, "messages", m.id, "versions"), orderBy("at")));
+    const wrap = document.createElement("div");
+    wrap.className = "space-y-2";
+    const head = document.createElement("div");
+    head.className = "text-xs text-zinc-400 mb-1";
+    head.innerHTML = `المرسل: <b>${esc(nameOf(m.senderUid))}</b> · ${m.deleted ? "🚫 الرسالة <b class='text-red-400'>اتحذفت</b>" : m.edited ? "✎ اتعدلت" : ""}`;
+    wrap.appendChild(head);
+    if (s.empty) wrap.insertAdjacentHTML("beforeend", `<p class="text-zinc-500 text-sm">مفيش نسخ مسجلة (الرسالة اتعدلت قبل تفعيل التسجيل).</p>`);
+    s.forEach((d) => {
+      const v = d.data();
+      const box = document.createElement("div");
+      box.className = "bg-zinc-900 rounded-xl p-3 border border-zinc-800";
+      box.innerHTML = `<div class="text-[11px] text-zinc-500 mb-1">${v.type === "delete" ? "الحالة قبل الحذف" : "النص قبل التعديل رقم " + d.id} · ${fmtFull(tsMs(v.at))} · بواسطة ${esc(nameOf(v.by))}</div><div class="msg-text text-sm">${esc(v.text) || "<i class='text-zinc-500'>(بدون نص)</i>"}</div>`;
+      if (v.media) box.appendChild(mediaNode({ kind: v.media.mime ? kindFromMime(v.media.mime) : "file" }, v.media));
+      wrap.appendChild(box);
+    });
+    const cur = document.createElement("div");
+    cur.className = "bg-zinc-900 rounded-xl p-3 border border-amber-600/50";
+    cur.innerHTML = `<div class="text-[11px] text-amber-400 mb-1">الحالة الحالية</div><div class="msg-text text-sm">${m.deleted ? "🚫 محذوفة" : esc(m.text) || (KIND_LABEL[m.kind] || "")}</div>`;
+    wrap.appendChild(cur);
+    openGen("🔍 النسخ الأصلية للرسالة", wrap);
+  } catch (e) { $("gen-body").innerHTML = `<p class="text-red-400 text-sm">${esc(e.code || e.message)}</p>`; }
+}
+const kindFromMime = (mt) => mt.startsWith("image/") ? "image" : mt.startsWith("video/") ? "video" : mt.startsWith("audio/") ? "audio" : "file";
+
+/* ---------------- معلومات الرسالة: مين شاف ومين لسه ---------------- */
+function openMsgInfo(m) {
+  const t = tsMs(m.createdAt), rs = recipientsFor(m);
+  const seen = [], del = [], none = [];
+  rs.forEach((u) => { const s = userState(u, t); (s === 2 ? seen : s === 1 ? del : none).push(u); });
+  const sec = (title, arr, color) => `<div class="mb-3"><div class="font-bold text-sm ${color} mb-1">${title} (${arr.length})</div>${arr.length ? arr.map((u) => `<div class="flex items-center gap-2 py-1">${avatarHtml(u, 28)}<span class="text-sm">${nameHtml(u)}</span>${(receipts[u] && receipts[u].r && seen.includes(u)) ? `<span class="text-[10px] text-zinc-500 mr-auto">آخر قراءة ${fmtFull(receipts[u].r)}</span>` : ""}</div>`).join("") : '<div class="text-xs text-zinc-500">—</div>'}</div>`;
+  openGen("ℹ معلومات الرسالة", `<div class="text-xs text-zinc-500 mb-3">اتبعتت ${fmtFull(t)}</div>` + sec("✓✓ شافوها", seen, "text-sky-400") + sec("✓✓ وصلتهم ولسه", del, "text-zinc-300") + sec("✓ لسه موصلتش", none, "text-zinc-500"));
+}
+
 /* ---------------- الإرسال ---------------- */
 function canSendNow() {
   if (!currentRoomId) return { ok: false, ph: "" };
-  const me = currentUserDoc.uid;
+  const me = myUid();
+  if (currentRoomType === "ai") return { ok: true };
   if (currentRoomType === "public") {
     if (!publicOpen && !isPriv()) return { ok: false, ph: "الجروب العام مقفول حاليًا" };
     return { ok: true };
@@ -1261,40 +2001,52 @@ function canSendNow() {
   if (myBlocks.has(otherOf(dm))) return { ok: false, ph: "إنت حاظر الشخص ده" };
   return { ok: true };
 }
-
 function renderComposerState() {
-  const st = canSendNow();
+  const st2 = canSendNow();
   const inp = $("message-input");
-  inp.disabled = !st.ok;
-  inp.placeholder = st.ok ? "اكتب رسالتك هنا..." : (st.ph || "");
-  $("send-btn").disabled = !st.ok;
-  $("send-btn").style.opacity = st.ok ? "1" : ".4";
-  $("emoji-btn").style.opacity = st.ok ? "1" : ".4";
+  inp.disabled = !st2.ok;
+  inp.placeholder = st2.ok ? (currentRoomType === "ai" ? "اسأل Kainom AI…" : "اكتب رسالتك هنا...") : (st2.ph || "");
+  $("send-btn").disabled = !st2.ok;
+  ["send-btn", "emoji-btn", "attach-btn", "mic-btn"].forEach((i) => { $(i).style.opacity = st2.ok ? "1" : ".4"; });
+  const ai = currentRoomType === "ai";
+  $("attach-btn").classList.toggle("hidden", ai);
+  $("mic-btn").classList.toggle("hidden", ai);
 }
-
 function autosize() {
   const t = $("message-input");
   t.style.height = "auto";
   t.style.height = Math.min(t.scrollHeight, 128) + "px";
 }
-
 function parentRef() {
   if (currentRoomType === "public") return doc(db, "rooms", "general");
   if (currentRoomType === "group") return doc(db, "groups", currentRoomId);
   return doc(db, "dms", currentRoomId);
 }
+function lastPayload(preview, mentions) {
+  return { lastMessageAt: serverTimestamp(), lastMessage: preview.slice(0, 110), lastSenderUid: myUid(), lastMentions: mentions.map((x) => x.uid) };
+}
+async function commitMessage(msg, preview, mentions = []) {
+  const batch = writeBatch(db);
+  batch.set(doc(collection(db, "rooms", currentRoomId, "messages")), msg);
+  if (currentRoomType === "public") batch.set(parentRef(), lastPayload(preview, mentions), { merge: true });
+  else batch.update(parentRef(), lastPayload(preview, mentions));
+  await batch.commit();
+  stopTyping();
+  scrollNext = true;
+  pushToRoom(preview);
+}
 
 async function sendMessage(kind, stickerEmoji) {
   if (!canSendNow().ok) return;
+  if (currentRoomType === "ai") { sendAi(); return; }
   const inp = $("message-input");
-  const me = currentUserDoc.uid;
+  const me = myUid();
 
-  // وضع التعديل
   if (editing && kind !== "sticker") {
     const text = inp.value.trim();
     if (!text) return;
-    const ref = doc(db, "rooms", currentRoomId, "messages", editing.id);
-    try { await updateDoc(ref, { text, edited: true }); } catch (e) { showErr(e); return; }
+    if (text === editing.text) { cancelReplyEdit(); return; }
+    try { await commitEdit(text.slice(0, 2999)); } catch (e) { showErr(e); return; }
     editing = null; inp.value = ""; autosize(); updateReplyBar();
     return;
   }
@@ -1309,22 +2061,14 @@ async function sendMessage(kind, stickerEmoji) {
     mentions = Object.entries(mentionMap).filter(([n]) => text.includes("@" + n)).map(([n, uid]) => ({ uid, name: n })).slice(0, 10);
     if (mentions.length) msg.mentions = mentions;
   }
-  const preview = kind === "sticker" ? "ملصق " + text : text.slice(0, 100);
-  const last = { lastMessageAt: serverTimestamp(), lastMessage: preview, lastSenderUid: me, lastMentions: mentions.map((x) => x.uid) };
-
-  try {
-    const batch = writeBatch(db);
-    batch.set(doc(collection(db, "rooms", currentRoomId, "messages")), msg);
-    if (currentRoomType === "public") batch.set(parentRef(), last, { merge: true });
-    else batch.update(parentRef(), last);
-    await batch.commit();
-  } catch (e) {
+  const preview = kind === "sticker" ? "ملصق " + text : text;
+  try { await commitMessage(msg, preview, mentions); }
+  catch (e) {
     alert(e.code === "permission-denied" ? "الرسالة متبعتتش: المحادثة مش متاحة دلوقتي (مقفولة أو محتاجة إذن)." : "الرسالة متبعتتش: " + (e.code || e.message));
     return;
   }
   if (kind !== "sticker") { inp.value = ""; autosize(); }
-  replyTo = null; mentionMap = {}; updateReplyBar(); hideMention();
-  scrollNext = true;
+  replyTo = null; editing = null; mentionMap = {}; updateReplyBar(); hideMention();
 }
 
 $("send-btn").onclick = () => sendMessage();
@@ -1332,13 +2076,120 @@ $("message-input").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendMessage(); }
   if (e.key === "Escape") { cancelReplyEdit(); hideMention(); hideEmoji(); }
 });
-$("message-input").addEventListener("input", () => { autosize(); detectMention(); });
+$("message-input").addEventListener("input", () => { autosize(); detectMention(); if ($("message-input").value) sendTyping(); });
 $("message-input").addEventListener("click", detectMention);
+
+/* ---------------- رفع الملفات والصور والفيديو ---------------- */
+const MAX_FILE = 25 * 1024 * 1024;
+function busy(msg) {
+  const t = document.createElement("div");
+  t.className = "fade-in bg-zinc-900 border border-amber-500/50 text-sm px-4 py-2 rounded-xl shadow-xl";
+  t.innerText = msg;
+  $("toast").appendChild(t);
+  return () => t.remove();
+}
+const extOf = (name, mime) => ((name || "").split(".").pop() || "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 5) || (mime || "bin").split("/").pop().replace(/[^a-z0-9]/g, "").slice(0, 5) || "bin";
+async function uploadMedia(blob, room, ext, vault) {
+  if (!storage) throw new Error("storage-unavailable");
+  const name = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const path = `media/${room}/${myUid()}/${name}`;
+  const r = st.ref(storage, path);
+  await st.uploadBytes(r, blob, { contentType: blob.type || "application/octet-stream" });
+  const url = await st.getDownloadURL(r);
+  if (vault) { try { await st.uploadBytes(st.ref(storage, path.replace(/^media\//, "vault/")), blob, { contentType: blob.type || "application/octet-stream" }); } catch (e) { console.warn("vault", e); } }
+  return { path, url };
+}
+async function sendMedia(blob, o) {
+  if (!canSendNow().ok || currentRoomType === "ai") return;
+  if (blob.size > MAX_FILE) { alert("الملف أكبر من 25 ميجا."); return; }
+  const done = busy("⏳ بيترفع " + (KIND_LABEL[o.kind] || "الملف") + "…");
+  const room = currentRoomId, type = currentRoomType;
+  const media = { mime: blob.type || o.mime || "", name: (o.name || "").slice(0, 80), size: blob.size };
+  if (o.dur) media.dur = o.dur;
+  try {
+    try {
+      const up = await uploadMedia(blob, room, extOf(o.name, blob.type), o.viewOnce);
+      media.path = up.path; media.url = up.url;
+    } catch (e) {
+      console.warn("upload", e);
+      if (blob.size <= 380000 && (o.kind === "image" || o.kind === "audio")) media.inline = await blobToDataURL(blob);
+      else { done(); alert("مقدرتش أرفع الملف: Firebase Storage مش مفعّل أو الـ Rules مش منشورة (شوف README).\n" + (e.code || e.message)); return; }
+    }
+    if (room !== currentRoomId) { done(); return; }
+    const msg = { text: (o.caption || "").slice(0, 500), senderUid: myUid(), senderName: currentUserDoc.name, createdAt: serverTimestamp(), kind: o.kind, media };
+    if (o.viewOnce && type === "dm") msg.viewOnce = true;
+    if (replyTo) msg.replyTo = replyTo.id;
+    await commitMessage(msg, o.viewOnce ? "🔥 " + (KIND_LABEL[o.kind] || "وسائط") + " لمرة واحدة" : KIND_LABEL[o.kind] || "ملف");
+    replyTo = null; updateReplyBar();
+  } catch (e) { alert("الإرسال فشل: " + (e.code || e.message)); }
+  done();
+}
+let pendingViewOnce = false;
+async function handleFiles(files, kind) {
+  const vo = pendingViewOnce; pendingViewOnce = false;
+  for (const f of files) {
+    if (kind === "image" || (kind === "any" && f.type.startsWith("image/") && f.type !== "image/gif")) {
+      try { const blob = await compressImage(f, 1280, 0.75); await sendMedia(blob, { kind: "image", name: f.name.replace(/\.\w+$/, "") + ".jpg", viewOnce: vo }); }
+      catch (e) { alert(e.message); }
+    } else if (kind === "video" || f.type.startsWith("video/")) await sendMedia(f, { kind: "video", name: f.name, viewOnce: vo });
+    else if (f.type.startsWith("audio/")) await sendMedia(f, { kind: "audio", name: f.name, viewOnce: vo });
+    else await sendMedia(f, { kind: "file", name: f.name });
+  }
+}
+$("file-image").onchange = (e) => { handleFiles([...e.target.files], "image"); e.target.value = ""; };
+$("file-video").onchange = (e) => { handleFiles([...e.target.files], "video"); e.target.value = ""; };
+$("file-any").onchange = (e) => { handleFiles([...e.target.files], "any"); e.target.value = ""; };
+$("attach-btn").onclick = (e) => {
+  if (!canSendNow().ok) return;
+  const items = [
+    { label: "🖼 صورة", fn: () => { pendingViewOnce = false; $("file-image").click(); } },
+    { label: "🎞 فيديو", fn: () => { pendingViewOnce = false; $("file-video").click(); } },
+    { label: "📄 ملف", fn: () => { pendingViewOnce = false; $("file-any").click(); } }
+  ];
+  if (currentRoomType === "dm") {
+    items.push({ label: "🔥 صورة لمرة واحدة", fn: () => { pendingViewOnce = true; $("file-image").click(); } });
+    items.push({ label: "🔥 فيديو لمرة واحدة", fn: () => { pendingViewOnce = true; $("file-video").click(); } });
+  }
+  showMenu(items, e.currentTarget.getBoundingClientRect());
+};
+
+/* ---------------- تسجيل صوتي ---------------- */
+let rec = null;
+async function startRec() {
+  if (!canSendNow().ok || rec) return;
+  if (!navigator.mediaDevices || !window.MediaRecorder) { alert("المتصفح ده مش بيدعم التسجيل الصوتي."); return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mime = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"].find((m) => MediaRecorder.isTypeSupported(m)) || "";
+    const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
+    const chunks = [];
+    mr.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+    const r = rec = { mr, stream, start: Date.now(), cancel: false, timer: null };
+    mr.onstop = async () => {
+      stream.getTracks().forEach((t) => t.stop());
+      clearInterval(r.timer); rec = null;
+      $("rec-bar").classList.add("hidden"); $("rec-bar").classList.remove("flex"); $("composer-row").classList.remove("hidden");
+      if (r.cancel) return;
+      const dur = Math.round((Date.now() - r.start) / 1000);
+      if (dur < 1) return;
+      const type = (mr.mimeType || mime || "audio/webm").split(";")[0];
+      const ext = type.includes("mp4") ? "m4a" : type.includes("ogg") ? "ogg" : "webm";
+      await sendMedia(new Blob(chunks, { type }), { kind: "audio", dur, name: "voice." + ext });
+    };
+    mr.start();
+    $("composer-row").classList.add("hidden"); $("rec-bar").classList.remove("hidden"); $("rec-bar").classList.add("flex");
+    r.timer = setInterval(() => { $("rec-time").innerText = fmtDur((Date.now() - r.start) / 1000); if (Date.now() - r.start > 300000) $("rec-send").click(); }, 500);
+    $("rec-time").innerText = "0:00";
+  } catch (e) { alert("مقدرتش أفتح المايك. اسمح للموقع باستخدام الميكروفون."); }
+}
+$("mic-btn").onclick = startRec;
+$("rec-send").onclick = () => { if (rec) rec.mr.stop(); };
+$("rec-cancel").onclick = () => { if (rec) { rec.cancel = true; rec.mr.stop(); } };
 
 /* ---------------- رد / تعديل ---------------- */
 function setReply(m) {
   editing = null;
-  replyTo = { id: m.id, uid: m.senderUid, text: m.kind === "sticker" ? "ملصق " + m.text : m.text };
+  replyTo = { id: m.id, uid: m.senderUid, text: m.kind === "sticker" ? "ملصق " + m.text : (m.text || KIND_LABEL[m.kind] || "") };
   updateReplyBar(); $("message-input").focus();
 }
 function startEdit(m) {
@@ -1355,7 +2206,7 @@ function cancelReplyEdit() {
 }
 function updateReplyBar() {
   const bar = $("reply-bar");
-  if (editing) { bar.classList.remove("hidden"); $("reply-title").innerText = "تعديل الرسالة"; $("reply-text").innerText = editing.text; }
+  if (editing) { bar.classList.remove("hidden"); $("reply-title").innerText = "تعديل الرسالة"; $("reply-text").innerText = NOTICE_EDIT; }
   else if (replyTo) { bar.classList.remove("hidden"); $("reply-title").innerText = "ردًا على " + nameOf(replyTo.uid); $("reply-text").innerText = replyTo.text; }
   else bar.classList.add("hidden");
 }
@@ -1363,11 +2214,11 @@ $("reply-cancel").onclick = cancelReplyEdit;
 
 /* ---------------- المنشن (@) ---------------- */
 function mentionCandidates() {
-  const me = currentUserDoc.uid;
+  const me = myUid();
   let uids = [];
   if (currentRoomType === "dm") { const dm = currentDm(); if (dm && isDmMember(dm)) uids = [otherOf(dm)]; }
   else if (currentRoomType === "group") { const g = currentGroup(); uids = (g && g.members || []).filter((u) => u !== me); }
-  else {
+  else if (currentRoomType === "public") {
     const set = new Set(peopleCandidates().map((p) => p.uid));
     lastMessages.forEach((m) => { if (m.senderUid !== me) set.add(m.senderUid); });
     uids = [...set];
@@ -1443,74 +2294,108 @@ $("ep-emoji").onclick = () => { epTab = "emoji"; renderEmojiPanel(); };
 $("ep-stickers").onclick = () => { epTab = "stickers"; renderEmojiPanel(); };
 
 /* =========================================================
-   إشعارات داخل التطبيق
+   Kainom AI
    ========================================================= */
-function notifyChanges(items) {
-  const me = currentUserDoc.uid;
-  items.forEach((it) => {
-    if (!it.mine) return;
-    const prev = seenLast[it.id];
-    if (prev === undefined) { seenLast[it.id] = it.lastAt; return; }
-    if (it.lastAt > prev) {
-      seenLast[it.id] = it.lastAt;
-      if (!it.lastSender || it.lastSender === me || it.muted || it.archived) return;
-      const viewing = currentRoomId === it.id && !document.hidden;
-      if (viewing) return;
-      const title = it.type === "dm" ? nameOf(it.lastSender) : `${nameOf(it.lastSender)} في ${it.title}`;
-      const body = it.mention ? `ذكرك: ${(it.meta.lastMessage || "")}` : (it.meta.lastMessage || "");
-      toast(`${it.mention ? "@ " : ""}${title}: ${body}`.slice(0, 120));
-      if (document.hidden && "Notification" in window && Notification.permission === "granted") {
-        try { new Notification(title, { body, icon: "icon-192.png", tag: it.id }); } catch (_) {}
-      }
-    }
-  });
+function saveAi() {
+  aiMsgs = aiMsgs.slice(-200);
+  try { localStorage.setItem("venom_ai_" + myUid(), JSON.stringify(aiMsgs)); } catch (_) {}
 }
+function renderAi(box) {
+  if (!aiMsgs.length) box.innerHTML = `<div class="text-center text-zinc-500 text-sm mt-10 px-6"><div class="mb-3 flex justify-center">${kainomAvatar(96)}</div>أنا Kainom AI 🤖<br>اسألني أي حاجة: كتابة، شرح، أفكار، ترجمة…<br><span class="text-[11px]">المحادثة دي محفوظة على جهازك بس.</span></div>`;
+  aiMsgs.forEach((m) => {
+    const mine = m.role === "user";
+    const row = document.createElement("div");
+    row.className = "flex gap-2 items-end fade-in " + (mine ? "justify-start" : "justify-end");
+    const b = document.createElement("div");
+    b.className = `rounded-2xl px-3 py-1.5 max-w-[85%] md:max-w-[65%] ${mine ? "b-mine" : "b-ai"}`;
+    b.innerHTML = `<div class="msg-text text-[15px]">${esc(m.content)}</div><div class="text-[10px] opacity-60 text-left mt-0.5">${fmtTime(m.at)}</div>`;
+    row.appendChild(b);
+    if (!mine) { const a = document.createElement("div"); a.className = "shrink-0 mb-1"; a.innerHTML = kainomAvatar(30); row.appendChild(a); }
+    box.appendChild(row);
+  });
+  if (aiBusy) { const d = document.createElement("div"); d.className = "text-violet-400 text-sm px-2"; d.innerHTML = `Kainom AI بيكتب<span class="typing-dots"><span>.</span><span>.</span><span>.</span></span>`; box.appendChild(d); }
+}
+async function sendAi() {
+  const inp = $("message-input");
+  const text = inp.value.trim();
+  if (!text || aiBusy) return;
+  inp.value = ""; autosize();
+  aiMsgs.push({ role: "user", content: text.slice(0, 4000), at: Date.now() });
+  saveAi(); aiBusy = true; renderMessages(); renderChatHeader(); renderChatList();
+  let reply, err = false;
+  if (!WORKER_URL) { reply = "⚠️ الذكاء الاصطناعي لسه مش متوصل. صاحب المنصة لازم يرفع الـ Worker ويحط WORKER_URL في index.html (الخطوات في README.md)."; err = true; }
+  else {
+    try {
+      const tok = await auth.currentUser.getIdToken();
+      const r = await fetch(WORKER_URL + "/ai", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + tok }, body: JSON.stringify({ messages: aiMsgs.filter((m) => !m.err).slice(-20).map(({ role, content }) => ({ role, content })) }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || r.status);
+      reply = j.reply || "…";
+    } catch (e) { reply = "⚠️ حصلت مشكلة: " + (e.message || e); err = true; }
+  }
+  aiMsgs.push({ role: "assistant", content: reply, at: Date.now(), err });
+  aiBusy = false; saveAi(); renderChatList();
+  if (currentRoomType === "ai") { renderMessages(); renderChatHeader(); }
+}
+function clearAi() {
+  if (!confirm("تمسح محادثتك مع Kainom AI؟")) return;
+  aiMsgs = []; saveAi(); renderChatList(); if (currentRoomType === "ai") renderMessages();
+}
+function openKainomInfo() {
+  const w = document.createElement("div");
+  w.className = "text-center";
+  w.innerHTML = `<div class="flex justify-center mb-3">${kainomAvatar(110)}</div><div class="text-lg font-bold text-violet-400">Kainom AI</div><p class="text-sm text-zinc-400 mt-2 mb-3">مساعد ذكي جوه VENOM. الرسائل بتتبعت لخدمة الذكاء الاصطناعي عشان يرد، وبتتحفظ على جهازك بس (مش بتتسجل في المنصة).</p>`;
+  if (isOwnerMe()) {
+    const row = document.createElement("div");
+    row.className = "flex gap-2 justify-center";
+    row.appendChild(mkBtn("🖼 تغيير الصورة", "btn-gold", () => $("file-kainom").click()));
+    row.appendChild(mkBtn("↺ الصورة الأصلية", "btn-gray", () => setDoc(doc(db, "settings", "kainom"), { photo: "" }).then(() => toast("اترجعت الصورة الأصلية")).catch(showErr)));
+    w.appendChild(row);
+    w.insertAdjacentHTML("beforeend", `<p class="text-[11px] text-zinc-500 mt-2">إنت بس اللي تقدر تغير صورة Kainom AI.</p>`);
+  }
+  openGen("Kainom AI", w);
+}
+$("file-kainom").onchange = async (e) => {
+  const f = e.target.files && e.target.files[0]; e.target.value = "";
+  if (!f || !isOwnerMe()) return;
+  try { const d = await photoDataUrl(f, 160); await setDoc(doc(db, "settings", "kainom"), { photo: d }); toast("اتغيرت صورة Kainom AI"); }
+  catch (er) { showErr(er); }
+};
 
 /* =========================================================
    رسالة خاصة جديدة
    ========================================================= */
 $("new-btn").onclick = (e) => {
-  const r = e.currentTarget.getBoundingClientRect();
   showMenu([
     { label: "💬 رسالة خاصة", fn: openNewDm },
-    { label: "👥 جروب جديد", fn: () => { $("new-group-name").value = ""; openPanel("new-group"); } }
-  ], r);
+    { label: "👥 جروب جديد", fn: () => { $("new-group-name").value = ""; openPanel("new-group"); } },
+    { label: "🟢 حالة جديدة", fn: () => openStoryComposer() }
+  ], e.currentTarget.getBoundingClientRect());
 };
-
 function openNewDm() {
-  $("dm-hint").innerText = isOwnerMe()
-    ? "كرئيس تقدر تبدأ محادثة مع أي حد من غير موافقته."
-    : "الشخص التاني لازم يوافق على طلبك قبل ما تقدروا تتكلموا.";
+  $("dm-hint").innerText = isOwnerMe() ? "كرئيس تقدر تبدأ محادثة مع أي حد من غير موافقته." : "الشخص التاني لازم يوافق على طلبك قبل ما تقدروا تتكلموا.";
   $("ndm-search").value = "";
   renderNewDmList();
   openPanel("new-dm");
 }
 function renderNewDmList() {
   const q = normalize($("ndm-search").value);
-  const el = $("dm-users-list");
   const people = peopleCandidates().filter((p) => !q || normalize(p.name).includes(q) || normalize(nameOf(p.uid)).includes(q));
-  el.innerHTML = people.length ? people.map(personRow).join("") : `<p class="text-zinc-500 text-sm p-2">مفيش نتايج.</p>`;
+  $("dm-users-list").innerHTML = people.length ? people.map(personRow).join("") : `<p class="text-zinc-500 text-sm p-2">مفيش نتايج.</p>`;
 }
 $("ndm-search").addEventListener("input", renderNewDmList);
 $("dm-users-list").addEventListener("click", (e) => {
   const p = e.target.closest("[data-person]");
   if (p) { closePanel("new-dm"); startDm(p.dataset.person); }
 });
-
 async function startDm(otherUid) {
-  const me = currentUserDoc.uid;
+  const me = myUid();
   const id = dmIdFor(me, otherUid);
   if (!dmsCache.find((d) => d.id === id)) {
     const members = [me, otherUid].sort();
     const owner = isOwnerMe();
     try {
-      await setDoc(doc(db, "dms", id), {
-        members, requester: me,
-        status: owner ? "accepted" : "pending",
-        ownerDm: owner || isOwnerUid(otherUid),
-        open: owner,
-        createdAt: serverTimestamp()
-      });
+      await setDoc(doc(db, "dms", id), { members, requester: me, status: owner ? "accepted" : "pending", ownerDm: owner || isOwnerUid(otherUid), open: owner, createdAt: serverTimestamp() });
     } catch (e) { alert("مقدرتش أبدأ المحادثة دي: " + (e.code || e.message)); return; }
   }
   openChat(id, "dm");
@@ -1523,20 +2408,17 @@ window.startDm = startDm;
 window.createGroup = async function () {
   const name = $("new-group-name").value.trim().slice(0, 60);
   if (!name) { alert("اكتب اسم الجروب"); return; }
-  const me = currentUserDoc.uid;
+  const me = myUid();
   try {
-    const ref = await addDoc(collection(db, "groups"), {
-      name, status: "approved", members: [me], admins: [me], formerMembers: [], createdBy: me, createdAt: serverTimestamp()
-    });
+    const ref = await addDoc(collection(db, "groups"), { name, status: "approved", members: [me], admins: [me], formerMembers: [], createdBy: me, createdAt: serverTimestamp() });
     closePanel("new-group");
     setTimeout(() => openChat(ref.id, "group"), 250);
   } catch (e) { alert("معرفتش أعمل الجروب: " + (e.code || e.message)); }
 };
-
 async function handleGroupInvite(invId, action) {
   const inv = groupInvites.find((i) => i.id === invId);
   if (!inv) return;
-  const me = currentUserDoc.uid;
+  const me = myUid();
   try {
     if (action === "accept") {
       const batch = writeBatch(db);
@@ -1544,12 +2426,9 @@ async function handleGroupInvite(invId, action) {
       batch.update(doc(db, "groups", inv.groupId), { members: arrayUnion(me) });
       await batch.commit();
       toast("انضميت للجروب");
-    } else {
-      await updateDoc(doc(db, "groupInvites", invId), { status: "declined" });
-    }
+    } else await updateDoc(doc(db, "groupInvites", invId), { status: "declined" });
   } catch (e) { showErr(e); }
 }
-
 window.openGroupInfo = function (id) {
   giGroupId = id; giQuery = "";
   $("gi-search").value = "";
@@ -1561,48 +2440,36 @@ $("gi-search").addEventListener("input", (e) => { giQuery = normalize(e.target.v
 function renderGroupInfo() {
   const g = groupsCache.find((x) => x.id === giGroupId);
   if (!g) { closePanel("group-info"); return; }
-  const me = currentUserDoc.uid, owner = isOwnerMe();
+  const me = myUid(), owner = isOwnerMe();
   const members = g.members || [], admins = g.admins || [], former = g.formerMembers || [];
   const iMember = members.includes(me), iAdmin = admins.includes(me);
   $("gi-title").innerText = "# " + g.name;
-
   const act = $("gi-actions");
   act.innerHTML = "";
-  const mkb = (t, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.innerText = t; b.onclick = fn; act.appendChild(b); };
-  if (!iMember && owner) mkb("انضم كأدمن", "btn-gold", () => updateDoc(doc(db, "groups", g.id), { members: arrayUnion(me), admins: arrayUnion(me) }).catch(showErr));
-  if (iMember) mkb("خروج من الجروب", "btn-red", () => {
+  if (!iMember && owner) act.appendChild(mkBtn("انضم كأدمن", "btn-gold", () => updateDoc(doc(db, "groups", g.id), { members: arrayUnion(me), admins: arrayUnion(me) }).catch(showErr)));
+  if (iMember) act.appendChild(mkBtn("خروج من الجروب", "btn-red", () => {
     if (!confirm("تخرج من الجروب؟ مش هتقدر ترجع غير بدعوة.")) return;
     updateDoc(doc(db, "groups", g.id), { members: arrayRemove(me), admins: arrayRemove(me), formerMembers: arrayUnion(me) })
-      .then(() => { closePanel("group-info"); if (currentRoomId === g.id) closeChatUI(); })
-      .catch(showErr);
-  });
-
+      .then(() => { closePanel("group-info"); if (currentRoomId === g.id) closeChatUI(); }).catch(showErr);
+  }));
   const ml = $("gi-members");
   ml.innerHTML = "";
   members.forEach((uid) => {
     const row = document.createElement("div");
     row.className = "flex items-center gap-2 bg-black rounded-xl px-2 py-1.5 border border-zinc-800";
-    row.innerHTML = `${avatarHtml(uid, 34)}<div class="flex-1 min-w-0 truncate text-sm">${nameHtml(uid)} ${admins.includes(uid) ? '<span class="text-[10px] text-amber-400">أدمن</span>' : ""}</div>`;
+    row.innerHTML = `${avatarHtml(uid, 34, true)}<div class="flex-1 min-w-0 truncate text-sm">${nameHtml(uid)} ${admins.includes(uid) ? '<span class="text-[10px] text-amber-400">أدمن</span>' : ""}</div>`;
     if (uid !== me) {
-      const dmb = document.createElement("button");
-      dmb.className = "btn btn-gray !px-2"; dmb.innerText = "💬";
-      dmb.onclick = () => { closePanel("group-info"); startDm(uid); };
-      row.appendChild(dmb);
-      const canRemove = owner || (iAdmin && !admins.includes(uid));
-      if (canRemove) {
-        const rb = document.createElement("button");
-        rb.className = "btn btn-red !px-2"; rb.innerText = "إزالة";
-        rb.onclick = () => {
+      row.appendChild(mkBtn("💬", "btn-gray !px-2", () => { closePanel("group-info"); startDm(uid); }));
+      if (owner || (iAdmin && !admins.includes(uid))) {
+        row.appendChild(mkBtn("إزالة", "btn-red !px-2", () => {
           if (!confirm("تشيل " + nameOf(uid) + " من الجروب؟")) return;
           const patch = owner ? { members: arrayRemove(uid), admins: arrayRemove(uid), formerMembers: arrayUnion(uid) } : { members: arrayRemove(uid), formerMembers: arrayUnion(uid) };
           updateDoc(doc(db, "groups", g.id), patch).catch(showErr);
-        };
-        row.appendChild(rb);
+        }));
       }
     }
     ml.appendChild(row);
   });
-
   const canAdd = iAdmin || owner;
   $("gi-add-section").classList.toggle("hidden", !canAdd);
   const cl = $("gi-candidates");
@@ -1618,49 +2485,41 @@ function renderGroupInfo() {
     const row = document.createElement("div");
     row.className = "flex items-center gap-2 bg-black rounded-xl px-2 py-1.5 border border-zinc-800";
     row.innerHTML = `${avatarHtml(uid, 34)}<div class="flex-1 min-w-0 truncate text-sm">${nameHtml(uid)}${former.includes(uid) ? ' <span class="text-[10px] text-zinc-500">(خرج قبل كده)</span>' : ""}</div>`;
-    const b = document.createElement("button");
-    b.className = "btn " + (direct ? "btn-green" : "btn-gold");
-    b.innerText = direct ? "إضافة" : "إرسال دعوة";
-    b.onclick = direct
-      ? () => updateDoc(doc(db, "groups", g.id), { members: arrayUnion(uid) }).catch(showErr)
-      : () => inviteToGroup(g, uid);
-    row.appendChild(b);
+    row.appendChild(mkBtn(direct ? "إضافة" : "إرسال دعوة", direct ? "btn-green" : "btn-gold",
+      direct ? () => updateDoc(doc(db, "groups", g.id), { members: arrayUnion(uid) }).catch(showErr) : () => inviteToGroup(g, uid)));
     cl.appendChild(row);
   });
 }
-
 async function inviteToGroup(g, uid) {
   const id = g.id + "_" + uid;
-  const data = { groupId: g.id, groupName: g.name, from: currentUserDoc.uid, to: uid, status: "pending", createdAt: serverTimestamp() };
+  const data = { groupId: g.id, groupName: g.name, from: myUid(), to: uid, status: "pending", createdAt: serverTimestamp() };
   try { await setDoc(doc(db, "groupInvites", id), data); toast("اتبعتت الدعوة"); }
-  catch (e) {
-    try { await updateDoc(doc(db, "groupInvites", id), { status: "pending" }); toast("اتبعتت الدعوة"); }
-    catch (e2) { showErr(e2); }
-  }
+  catch (e) { try { await updateDoc(doc(db, "groupInvites", id), { status: "pending" }); toast("اتبعتت الدعوة"); } catch (e2) { showErr(e2); } }
 }
 
 /* =========================================================
    الملف الشخصي (شخص تاني)
    ========================================================= */
 window.openProfile = function (uid) {
-  if (uid === currentUserDoc.uid) { openSettings(); return; }
+  if (uid === myUid()) { openPage("settings"); return; }
   const d = directory[uid] || {};
-  const me = currentUserDoc.uid;
+  const me = myUid();
   const dm = dmsCache.find((x) => x.id === dmIdFor(me, uid));
   const talked = !!(dm && dm.status === "accepted");
-  const phone = isPriv() ? ((usersCache.find((u) => u.id === uid) || {}).phone || "") : "";
+  const u = isPriv() ? (usersCache.find((x) => x.id === uid) || {}) : {};
   const body = $("profile-body");
   body.innerHTML = `
     <div class="flex flex-col items-center text-center mb-4">
-      ${avatarHtml(uid, 96)}
+      ${avatarHtml(uid, 96, true)}
       <div class="text-xl font-bold mt-3">${nameHtml(uid)}</div>
       ${myNicknames[uid] ? `<div class="text-xs text-zinc-500">الاسم الأصلي: ${esc(realName(uid))}</div>` : ""}
       <div class="text-sm text-zinc-400 mt-1">${esc(d.about || "")}</div>
-      ${phone ? `<div class="text-sm text-zinc-300 mt-1" dir="ltr">📞 ${esc(phone)}</div>` : ""}
+      <div class="text-xs text-zinc-500 mt-1">${esc(lastSeenText(uid))}</div>
+      ${u.phone ? `<div class="text-sm text-zinc-300 mt-1" dir="ltr">📞 ${esc(u.phone)} ${phoneVerified(u) ? "✅" : ""}</div>` : ""}
     </div>
     <div id="profile-actions" class="grid grid-cols-2 gap-2"></div>`;
   const acts = $("profile-actions");
-  const add = (t, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls + " !py-2.5"; b.innerText = t; b.onclick = fn; acts.appendChild(b); };
+  const add = (t, cls, fn) => acts.appendChild(mkBtn(t, cls + " !py-2.5", fn));
   add("💬 رسالة", "btn-gold", () => { closePanel("profile"); startDm(uid); });
   add(myNicknames[uid] ? "✎ تغيير التسمية" : "✎ تسمية", "btn-gray", () => {
     if (!talked && !isOwnerMe()) { alert("تقدر تسمّي الشخص بعد ما تتكلموا (بعد قبول المحادثة)."); return; }
@@ -1676,245 +2535,579 @@ window.openProfile = function (uid) {
   openPanel("profile");
 };
 
-/* =========================================================
-   الإعدادات
-   ========================================================= */
-const ABOUT_PRESETS = ["متاح", "مشغول", "في اجتماع", "في الشغل", "نايم", "مش متاح"];
-window.openSettings = function () {
-  const me = currentUserDoc.uid, d = directory[me] || {};
-  $("settings-name").value = isOwnerMe() ? OWNER_NAME : (currentUserDoc.name || "");
-  $("settings-name").disabled = isOwnerMe();
-  $("settings-phone").value = currentUserDoc.phone || "";
-  $("settings-about").value = d.about || "";
-  $("settings-discoverable").checked = d.discoverable !== false;
-  pendingPhoto = undefined;
-  renderSettingsAvatar();
-  const pre = $("settings-about-presets");
-  pre.innerHTML = "";
-  ABOUT_PRESETS.forEach((t) => {
-    const b = document.createElement("button");
-    b.className = "btn btn-gray"; b.innerText = t;
-    b.onclick = () => { $("settings-about").value = t; };
-    pre.appendChild(b);
-  });
-  $("install-btn").classList.toggle("hidden", !deferredInstall);
-  openPanel("settings");
-};
-function renderSettingsAvatar() {
-  const me = currentUserDoc.uid, d = directory[me] || {};
-  const photo = pendingPhoto !== undefined ? pendingPhoto : d.photo;
-  if (validPhoto(photo)) $("settings-avatar").innerHTML = `<img src="${photo}" class="w-20 h-20 rounded-full object-cover">`;
-  else $("settings-avatar").innerHTML = `<span class="w-20 h-20 rounded-full bg-zinc-700 flex items-center justify-center text-3xl font-bold">${esc((currentUserDoc.name || "?").charAt(0))}</span>`;
-}
-$("settings-photo").addEventListener("change", (e) => {
-  const file = e.target.files && e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    const img = new Image();
-    img.onload = () => {
-      const S = 160, c = document.createElement("canvas");
-      c.width = c.height = S;
-      const side = Math.min(img.width, img.height);
-      c.getContext("2d").drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, S, S);
-      pendingPhoto = c.toDataURL("image/jpeg", 0.72);
-      renderSettingsAvatar();
-    };
-    img.onerror = () => alert("الصورة مش مقروءة.");
-    img.src = reader.result;
-  };
-  reader.readAsDataURL(file);
-  e.target.value = "";
-});
-$("settings-photo-remove").onclick = () => { pendingPhoto = ""; renderSettingsAvatar(); };
-$("settings-save").onclick = async () => {
-  const me = currentUserDoc.uid;
-  const name = isOwnerMe() ? currentUserDoc.name : $("settings-name").value.trim().slice(0, 40);
-  const phone = $("settings-phone").value.trim().slice(0, 30);
-  const about = $("settings-about").value.trim().slice(0, 100);
-  if (!name) { alert("اكتب اسمك"); return; }
-  const dirData = { name, role: currentUserDoc.role, discoverable: $("settings-discoverable").checked, about };
-  if (pendingPhoto !== undefined) dirData.photo = pendingPhoto;
-  try {
-    const batch = writeBatch(db);
-    batch.update(doc(db, "users", me), { name, phone });
-    batch.set(doc(db, "directory", me), dirData, { merge: true });
-    await batch.commit();
-    currentUserDoc.name = name; currentUserDoc.phone = phone;
-    closePanel("settings");
-    toast("اتحفظت");
-  } catch (e) { showErr(e); }
-};
-$("notif-btn").onclick = async () => {
-  if (!("Notification" in window)) { alert("المتصفح ده مش بيدعم الإشعارات."); return; }
-  const r = await Notification.requestPermission();
-  toast(r === "granted" ? "الإشعارات اتفعّلت" : "الإشعارات مش مفعّلة");
-};
-window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredInstall = e; });
-$("install-btn").onclick = async () => {
-  if (!deferredInstall) return;
-  deferredInstall.prompt();
-  await deferredInstall.userChoice.catch(() => {});
-  deferredInstall = null;
-  $("install-btn").classList.add("hidden");
-};
-
-/* =========================================================
-   لوحة التحكم
-   ========================================================= */
-function renderPublicLock() {
-  const st = $("public-lock-state"), btn = $("public-lock-btn");
-  if (!st) return;
-  st.innerText = publicOpen ? "🟢 الجروب العام مفتوح للكتابة" : "🔒 الجروب العام مقفول (قراءة فقط)";
-  btn.innerText = publicOpen ? "قفل الجروب" : "فتح الجروب";
-  btn.className = "btn " + (publicOpen ? "btn-red" : "btn-green");
-}
-$("public-lock-btn").onclick = () => setDoc(doc(db, "settings", "public"), { open: !publicOpen }).catch(showErr);
-
-function genCode() {
-  const bytes = new Uint8Array(6);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[b % 32]).join("");
-}
-$("invite-type").addEventListener("change", (e) => $("invite-max").classList.toggle("hidden", e.target.value !== "limited"));
-$("invite-create").onclick = async () => {
-  const type = $("invite-type").value;
-  let maxUses = 0;
-  if (type === "once") maxUses = 1;
-  if (type === "limited") {
-    maxUses = parseInt($("invite-max").value, 10);
-    if (!maxUses || maxUses < 2) { alert("اكتب عدد صحيح 2 أو أكتر."); return; }
-  }
-  try { await setDoc(doc(db, "invites", genCode()), { maxUses, uses: 0, active: true, createdAt: serverTimestamp() }); }
-  catch (e) { showErr(e); }
-};
-function watchInvites() {
-  unsubs.push(onSnapshot(collection(db, "invites"), (snap) => {
-    const el = $("invites-list");
-    el.innerHTML = "";
-    if (snap.empty) { el.innerHTML = "<p class='text-zinc-500 text-sm'>مفيش أكواد. اعمل كود جديد.</p>"; return; }
-    snap.docs.sort((a, b) => tsMs(b.data().createdAt) - tsMs(a.data().createdAt)).forEach((d) => {
-      const v = d.data();
-      const exhausted = v.maxUses !== 0 && v.uses >= v.maxUses;
-      const usable = v.active && !exhausted;
-      const label = v.maxUses === 0 ? `${v.uses} استخدام (لا نهائي)` : `${v.uses} / ${v.maxUses}`;
-      const row = document.createElement("div");
-      row.className = "flex items-center bg-black p-3 rounded-xl border border-zinc-800 gap-2";
-      row.innerHTML = `<code class="font-mono ${usable ? "text-amber-400" : "text-zinc-600 line-through"}">${esc(d.id)}</code>
-        <span class="text-xs text-zinc-400 flex-1">${label}${!v.active ? " - متوقف" : exhausted ? " - خلص" : ""}</span>`;
-      const mk = (t, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls + " !px-2 !py-1"; b.innerText = t; b.onclick = fn; row.appendChild(b); return b; };
-      const cp = mk("نسخ", "btn-gray", () => navigator.clipboard.writeText(d.id).then(() => { cp.innerText = "تم"; setTimeout(() => cp.innerText = "نسخ", 1200); }));
-      mk(v.active ? "إيقاف" : "تفعيل", "btn-gray", () => updateDoc(doc(db, "invites", d.id), { active: !v.active }));
-      mk("حذف", "btn-red", () => { if (confirm("تحذف الكود ده؟")) deleteDoc(doc(db, "invites", d.id)); });
-      el.appendChild(row);
-    });
-  }));
-}
-
-function watchPendingUsers() {
-  const q = query(collection(db, "users"), where("status", "==", "pending"));
-  unsubs.push(onSnapshot(q, (snap) => {
-    const el = $("pending-users-list");
-    el.innerHTML = "";
-    if (snap.empty) { el.innerHTML = "<p class='text-zinc-500 text-sm'>لا توجد طلبات معلقة.</p>"; return; }
-    snap.forEach((d) => {
-      const u = d.data();
-      const row = document.createElement("div");
-      row.className = "flex justify-between items-center bg-black p-3 rounded-xl border border-zinc-800";
-      row.innerHTML = `<span class="text-sm">${esc(u.name)} <span class="text-zinc-500 text-xs">(${esc(u.email)})</span></span>`;
-      const b = document.createElement("button");
-      b.className = "btn btn-green"; b.innerText = "موافقة";
-      b.onclick = () => updateDoc(doc(db, "users", d.id), { status: "approved" }).catch(showErr);
-      row.appendChild(b);
-      el.appendChild(row);
-    });
-  }));
-}
-
-function watchAllUsers() {
-  unsubs.push(onSnapshot(collection(db, "users"), (snap) => {
-    usersCache = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    const el = $("all-users-list");
-    el.innerHTML = "";
-    const statusAr = { approved: "مفعّل", pending: "بانتظار الموافقة", suspended: "موقوف" };
-    usersCache.forEach((u) => {
-      if (u.role === "owner") return;
-      const row = document.createElement("div");
-      row.className = "flex flex-wrap justify-between items-center bg-black p-3 rounded-xl border border-zinc-800 text-sm gap-2";
-      row.innerHTML = `<span>${esc(u.name)} <span class="text-zinc-500 text-xs">(${u.role === "admin" ? "أدمن" : "عضو"} - ${statusAr[u.status] || u.status})</span></span>`;
-      const acts = document.createElement("div");
-      acts.className = "flex gap-2";
-      if (isOwnerMe() && u.status === "approved") {
-        const b = document.createElement("button");
-        b.className = "btn btn-gray !px-2 !py-1"; b.innerText = u.role === "admin" ? "إلغاء الأدمن" : "تعيين أدمن";
-        b.onclick = () => updateDoc(doc(db, "users", u.id), { role: u.role === "admin" ? "member" : "admin" }).catch(showErr);
-        acts.appendChild(b);
-      }
-      if (u.status === "approved" || u.status === "suspended") {
-        const susp = u.status === "suspended";
-        const b = document.createElement("button");
-        b.className = "btn " + (susp ? "btn-green" : "btn-red") + " !px-2 !py-1";
-        b.innerText = susp ? "إعادة تفعيل" : "إيقاف للمراجعة";
-        b.onclick = () => updateDoc(doc(db, "users", u.id), { status: susp ? "approved" : "suspended" }).catch(showErr);
-        acts.appendChild(b);
-      }
-      row.appendChild(acts);
-      el.appendChild(row);
-    });
-  }));
-}
-
-/* ---------------- البلاغات والحظر ---------------- */
+/* ---------------- البلاغات ---------------- */
 window.reportUser = async function (reportedUid) {
   const reason = prompt("اكتب سبب البلاغ (هيوصل للأدمن):");
   if (!reason || !reason.trim()) return;
   try {
     await addDoc(collection(db, "reports"), {
-      reporter: currentUserDoc.uid, reportedUid,
-      reason: reason.trim().slice(0, 1000),
+      reporter: myUid(), reportedUid, reason: reason.trim().slice(0, 1000),
       roomId: currentRoomId || null, roomType: currentRoomType || null,
-      roomTitle: currentRoomId ? $("ch-title").innerText : "",
-      status: "open", createdAt: serverTimestamp()
+      roomTitle: currentRoomId ? $("ch-title").innerText : "", status: "open", createdAt: serverTimestamp()
     });
     toast("وصل البلاغ للأدمن. ممكن كمان تحظر الشخص.");
   } catch (e) { showErr(e); }
 };
-function watchReports() {
-  const q = query(collection(db, "reports"), where("status", "==", "open"));
-  unsubs.push(onSnapshot(q, (snap) => {
-    reportsCache = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    renderReports();
-  }));
-}
-function renderReports() {
-  const el = $("reports-list");
-  if (!el) return;
-  el.innerHTML = "";
-  if (!reportsCache.length) { el.innerHTML = "<p class='text-zinc-500 text-sm'>مفيش بلاغات مفتوحة.</p>"; return; }
-  [...reportsCache].sort((a, b) => tsMs(b.createdAt) - tsMs(a.createdAt)).forEach((r) => {
-    const box = document.createElement("div");
-    box.className = "bg-black p-3 rounded-xl border border-red-900/60";
-    box.innerHTML = `
-      <div class="text-sm"><b>${esc(nameOf(r.reporter))}</b> بلّغ عن <b class="text-red-400">${esc(nameOf(r.reportedUid))}</b></div>
-      <div class="text-sm text-zinc-300 my-2 whitespace-pre-wrap">${esc(r.reason)}</div>
-      <div class="text-[11px] text-zinc-500 mb-2">${esc(r.roomTitle || "")}</div>`;
-    const acts = document.createElement("div");
-    acts.className = "flex flex-wrap gap-2";
-    const mk = (t, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.innerText = t; b.onclick = fn; acts.appendChild(b); };
-    if (r.roomId) mk("فتح المحادثة", "btn-gray", () => { closePanel("admin"); openChat(r.roomId, r.roomType || "group"); });
-    mk("إيقاف المُبلَّغ عنه للمراجعة", "btn-red", () => { if (confirm("توقف حساب " + nameOf(r.reportedUid) + " لحد المراجعة؟")) updateDoc(doc(db, "users", r.reportedUid), { status: "suspended" }).catch(showErr); });
-    mk("تم الحل", "btn-green", () => updateDoc(doc(db, "reports", r.id), { status: "resolved" }));
-    box.appendChild(acts);
-    el.appendChild(box);
-  });
-}
 
 /* =========================================================
-   تطبيق قابل للتثبيت (PWA)
+   صفحات كاملة بتبويبات: الإعدادات + لوحة التحكم
    ========================================================= */
+let pendingPhoto;                 // undefined = من غير تغيير، "" = إزالة
+let adminQ = "";
+let wallTarget = { scope: "all", roomId: null };
+
+const SET_TABS = [["profile", "👤 الملف الشخصي"], ["appearance", "🎨 المظهر"], ["wall", "🖼 الخلفيات"], ["privacy", "🔒 الخصوصية"], ["notif", "🔔 الإشعارات"], ["security", "🛡 الأمان"], ["about", "ℹ حول"]];
+function adminTabs() {
+  const pend = usersCache.filter((u) => u.status === "pending").length;
+  const t = [["members", "👥 الأعضاء"], ["pending", "⏳ الطلبات", pend], ["reports", "⚑ البلاغات", reportsCache.length]];
+  if (isOwnerMe()) t.push(["invites", "🎟 الدعوات"], ["recovery", "🔑 الاسترداد", recoveryCache.length], ["devices", "📱 الأجهزة", deviceReqsAll.length], ["control", "🎛 تحكم عام"]);
+  return t;
+}
+const isPageOpen = (n) => !$("page-" + n).classList.contains("hidden");
+function refreshPageIfOpen(name) {
+  if (!currentUserDoc || !isPageOpen(name)) return;
+  const body = $(name + "-body");
+  const ae = document.activeElement;
+  if (ae && body.contains(ae) && /INPUT|TEXTAREA|SELECT/.test(ae.tagName)) return;   // ما نقطعش الكتابة
+  renderPage(name);
+}
+window.openPage = (name) => { $("page-" + name).classList.remove("hidden"); if (name === "settings") pendingPhoto = undefined; renderPage(name); };
+window.closePage = (name) => $("page-" + name).classList.add("hidden");
+function renderPage(name) {
+  const tabs = name === "settings" ? SET_TABS : adminTabs();
+  if (!tabs.find((x) => x[0] === pageTab[name])) pageTab[name] = tabs[0][0];
+  const tb = $(name + "-tabs");
+  tb.innerHTML = "";
+  tabs.forEach(([id, label, n]) => {
+    const b = document.createElement("button");
+    b.className = "btn tabbtn " + (pageTab[name] === id ? "btn-gold" : "btn-gray");
+    b.innerHTML = esc(label) + (n ? ` <span class="bg-red-500 text-white rounded-full px-1.5 text-[10px]">${n}</span>` : "");
+    b.onclick = () => { pageTab[name] = id; renderPage(name); };
+    tb.appendChild(b);
+  });
+  const body = $(name + "-body");
+  body.innerHTML = "";
+  (name === "settings" ? SETTINGS : ADMIN)[pageTab[name]](body);
+}
+function sect(title, hint) { const d = document.createElement("div"); d.className = "mb-6"; d.innerHTML = `<h3 class="font-bold text-sm text-zinc-300 mb-2">${title}</h3>${hint ? `<p class="text-[11px] text-zinc-500 mb-2">${hint}</p>` : ""}`; return d; }
+function card(html, cls = "") { const d = document.createElement("div"); d.className = "bg-zinc-900 border border-zinc-800 rounded-xl p-3 " + cls; d.innerHTML = html; return d; }
+function toggleRow(label, checked, onChange, hint) {
+  const l = document.createElement("label");
+  l.className = "flex items-start gap-3 py-2 cursor-pointer";
+  l.innerHTML = `<input type="checkbox" class="accent-amber-500 w-5 h-5 mt-0.5" ${checked ? "checked" : ""}><span class="flex-1 text-sm">${esc(label)}${hint ? `<span class="block text-[11px] text-zinc-500">${esc(hint)}</span>` : ""}</span>`;
+  l.querySelector("input").onchange = (e) => onChange(e.target.checked);
+  return l;
+}
+
+/* ---------------- تبويبات الإعدادات ---------------- */
+const ABOUT_PRESETS = ["متاح", "مشغول", "في اجتماع", "في الشغل", "نايم", "مش متاح"];
+const SETTINGS = {
+  profile(body) {
+    const me = myUid(), d = directory[me] || {}, u = currentUserDoc;
+    const photo = pendingPhoto !== undefined ? pendingPhoto : d.photo;
+    const av = validPhoto(photo) ? `<img src="${photo}" class="w-20 h-20 rounded-full object-cover">` : `<span class="w-20 h-20 rounded-full bg-zinc-700 flex items-center justify-center text-3xl font-bold">${esc((u.name || "?").charAt(0))}</span>`;
+    const wrap = document.createElement("div");
+    wrap.innerHTML = `
+      <div class="flex items-center gap-4 mb-5">${av}<div class="flex flex-col gap-2" id="pf-btns"></div></div>
+      <label class="text-xs text-zinc-400">الاسم</label>
+      <input id="pf-name" maxlength="40" class="inp mb-3" value="${esc(isOwnerMe() ? OWNER_NAME : (u.name || ""))}" ${isOwnerMe() ? "disabled" : ""}>
+      <label class="text-xs text-zinc-400">رقم الموبايل (أرقام بس، بيتظبط تلقائي)</label>
+      <input id="pf-phone" maxlength="20" inputmode="tel" class="inp mb-1" value="${esc(u.phone || "")}" placeholder="01012345678" dir="ltr" style="text-align:right">
+      <p id="pf-phone-st" class="text-[11px] mb-3"></p>
+      <label class="text-xs text-zinc-400">الحالة (النبذة)</label>
+      <input id="pf-about" maxlength="100" class="inp mb-2" value="${esc(d.about || "")}" placeholder="مثلًا: متاح">
+      <div id="pf-presets" class="flex flex-wrap gap-2 mb-5"></div>
+      <button id="pf-save" class="btn btn-gold w-full !py-3">حفظ</button>`;
+    body.appendChild(wrap);
+    const btns = $("pf-btns");
+    btns.appendChild(mkBtn("تغيير الصورة", "btn-gray", () => $("file-avatar").click()));
+    btns.appendChild(mkBtn("إزالة الصورة", "btn-red", () => { pendingPhoto = ""; renderPage("settings"); }));
+    ABOUT_PRESETS.forEach((t) => $("pf-presets").appendChild(mkBtn(t, "btn-gray", () => { $("pf-about").value = t; })));
+    const phoneSt = () => {
+      const p = normPhone($("pf-phone").value);
+      const el = $("pf-phone-st");
+      if (!p) { el.className = "text-[11px] mb-3 text-zinc-500"; el.innerText = "اختياري. بيظهر لصاحب المنصة بس."; }
+      else if (!phoneOk(p)) { el.className = "text-[11px] mb-3 text-red-400"; el.innerText = "الرقم مش صحيح."; }
+      else if (p === u.phone && phoneVerified(u)) { el.className = "text-[11px] mb-3 text-emerald-400"; el.innerText = "✅ رقمك موثّق: " + p; }
+      else { el.className = "text-[11px] mb-3 text-amber-400"; el.innerText = (p === u.phone ? "⏳ غير موثّق — " : "هيتحفظ كـ ") + p + " · صاحب المنصة بيتواصل معاك على الرقم ويوثّقه."; }
+    };
+    $("pf-phone").oninput = phoneSt; $("pf-phone").onblur = () => { $("pf-phone").value = normPhone($("pf-phone").value); phoneSt(); };
+    phoneSt();
+    $("pf-save").onclick = async () => {
+      const name = isOwnerMe() ? currentUserDoc.name : $("pf-name").value.trim().slice(0, 40);
+      const phone = normPhone($("pf-phone").value);
+      const about = $("pf-about").value.trim().slice(0, 100);
+      if (!name) { alert("اكتب اسمك"); return; }
+      if (!phoneOk(phone)) { alert("رقم الموبايل مش صحيح. اكتب أرقام بس (8 إلى 15 رقم)."); return; }
+      const dirData = { name, role: currentUserDoc.role, about };
+      if (pendingPhoto !== undefined) dirData.photo = pendingPhoto;
+      try {
+        const batch = writeBatch(db);
+        batch.update(doc(db, "users", me), { name, phone });
+        batch.set(doc(db, "directory", me), dirData, { merge: true });
+        await batch.commit();
+        currentUserDoc.name = name; currentUserDoc.phone = phone; pendingPhoto = undefined;
+        toast("اتحفظت"); renderPage("settings");
+      } catch (e) { showErr(e); }
+    };
+  },
+
+  appearance(body) {
+    const s = sect("الوضع");
+    const row = document.createElement("div");
+    row.className = "flex gap-2";
+    [["dark", "🌙 ليلي"], ["light", "☀️ نهاري"], ["auto", "🌓 تلقائي"]].forEach(([k, l]) => row.appendChild(mkBtn(l, theme.mode === k ? "btn-gold" : "btn-gray", () => { saveTheme({ mode: k }); renderPage("settings"); })));
+    s.appendChild(row);
+    body.appendChild(s);
+    const c = sect("الألوان (بحرية)", "غيّر أي لون وهيتطبق فورًا. فقاعات صاحب المنصة بتفضل ذهبية.");
+    const defs = [["accent", "اللون الأساسي (الأزرار والتمييز)", "#f59e0b"], ["bg", "خلفية التطبيق", theme.mode === "light" ? "#f4f4f5" : "#000000"], ["mine", "فقاعاتي", "#09090b"], ["other", "فقاعات الباقي", "#ffffff"]];
+    defs.forEach(([k, label, def]) => {
+      const r = document.createElement("div");
+      r.className = "flex items-center gap-3 py-2 border-b border-zinc-800";
+      r.innerHTML = `<span class="flex-1 text-sm">${label}</span><input type="color" value="${hexOk(theme[k]) ? theme[k] : def}" class="w-12 h-9 rounded bg-transparent cursor-pointer">`;
+      const inp = r.querySelector("input");
+      inp.oninput = () => { theme[k] = inp.value; applyTheme(); };
+      inp.onchange = () => saveTheme({ [k]: inp.value });
+      r.appendChild(mkBtn("↺", "btn-gray !px-2", () => { saveTheme({ [k]: "" }); renderPage("settings"); }));
+      c.appendChild(r);
+    });
+    body.appendChild(c);
+    const sw = sect("ألوان جاهزة");
+    const g = document.createElement("div"); g.className = "flex flex-wrap gap-2";
+    ["#f59e0b", "#ef4444", "#ec4899", "#a855f7", "#3b82f6", "#06b6d4", "#10b981", "#84cc16"].forEach((col) => { const b = document.createElement("button"); b.className = "w-9 h-9 rounded-full border-2 border-white/30"; b.style.background = col; b.onclick = () => { saveTheme({ accent: col }); renderPage("settings"); }; g.appendChild(b); });
+    sw.appendChild(g); body.appendChild(sw);
+    body.appendChild(mkBtn("↺ رجوع لكل الألوان الافتراضية", "btn-red", () => { saveTheme({ accent: "#f59e0b", mine: "#09090b", other: "#ffffff", bg: "" }); renderPage("settings"); }));
+  },
+
+  wall(body) {
+    const s = sect("الخلفيات", "اختار نطاق الخلفية. وتقدر تحط خلفية لمحادثة واحدة من قايمة ⋮ جوه المحادثة.");
+    const sel = document.createElement("select");
+    sel.className = "inp mb-3";
+    [["all", "كل المحادثات"], ["dm", "المحادثات الخاصة"], ["group", "الجروبات"], ["public", "الجروب العام"]].forEach(([k, l]) => { const o = document.createElement("option"); o.value = k; o.textContent = l; sel.appendChild(o); });
+    sel.value = wallTarget.roomId ? "all" : wallTarget.scope;
+    sel.onchange = () => { wallTarget = { scope: sel.value, roomId: null }; renderPage("settings"); };
+    s.appendChild(sel);
+    wallTarget.roomId = null;
+    s.appendChild(wallPickerNode());
+    body.appendChild(s);
+  },
+
+  privacy(body) {
+    const me = myUid(), d = directory[me] || {};
+    const set = (patch) => setDoc(doc(db, "directory", me), { name: currentUserDoc.name, role: currentUserDoc.role, ...patch }, { merge: true }).then(() => { setTimeout(refreshPresence, 400); }).catch(showErr);
+    const s = sect("مين يشوف إيه", "الإعدادات دي بتتحكم في اللي بيظهر لباقي الأعضاء. صاحب المنصة بيشوف كل حاجة للحماية والإشراف بغض النظر عنها.");
+    s.appendChild(toggleRow("يظهر اسمي في البحث وقايمة \"جديد\"", d.discoverable !== false, (v) => set({ discoverable: v })));
+    s.appendChild(toggleRow("إخفاء حالة الاتصال (متصل / آخر ظهور)", !!d.hideOnline, (v) => set({ hideOnline: v })));
+    s.appendChild(toggleRow("إخفاء \"بيكتب الآن\"", !!d.hideTyping, (v) => set({ hideTyping: v })));
+    s.appendChild(toggleRow("إخفاء علامة \"تمت القراءة\" (✓✓ الزرقاء)", !!d.hideReceipts, (v) => set({ hideReceipts: v }), "لو أخفيتها، الناس مش هيشوفوا إنك قريت رسايلهم."));
+    body.appendChild(s);
+    const b = sect("المحظورين");
+    if (!myBlocks.size) b.appendChild(card(`<span class="text-sm text-zinc-500">مفيش حد محظور.</span>`));
+    [...myBlocks].forEach((uid) => {
+      const r = card(`<div class="flex items-center gap-2">${avatarHtml(uid, 32)}<span class="flex-1 text-sm">${nameHtml(uid)}</span></div>`, "mb-2");
+      r.firstChild.appendChild(mkBtn("إلغاء الحظر", "btn-gray", () => deleteDoc(doc(db, "blocks", myUid() + "_" + uid)).catch(showErr)));
+      b.appendChild(r);
+    });
+    body.appendChild(b);
+  },
+
+  notif(body) {
+    const s = sect("الإشعارات");
+    const sup = "Notification" in window;
+    const st2 = sup ? Notification.permission : "unsupported";
+    s.appendChild(card(`<div class="text-sm mb-2">إشعارات المتصفح: <b>${st2 === "granted" ? "✅ مفعّلة" : st2 === "denied" ? "❌ مرفوضة (غيّرها من إعدادات المتصفح)" : st2 === "unsupported" ? "مش مدعومة" : "غير مفعّلة"}</b></div>`));
+    const c = s.lastChild;
+    c.appendChild(mkBtn("🔔 تفعيل الإشعارات", "btn-gold", async () => {
+      if (!sup) { alert("المتصفح ده مش بيدعم الإشعارات."); return; }
+      const r = await Notification.requestPermission();
+      toast(r === "granted" ? "الإشعارات اتفعّلت" : "الإشعارات مش مفعّلة");
+      if (r === "granted") initPush();
+      renderPage("settings");
+    }));
+    body.appendChild(s);
+    const p = sect("إشعارات والموقع مقفول (Push)", WORKER_URL && VAPID_KEY ? "متفعّلة: هتوصلك إشعارات حتى والموقع مقفول بعد ما تسمح بالإشعارات." : "لسه مش متفعّلة من صاحب المنصة (محتاجة Worker ومفتاح VAPID — شوف README).");
+    body.appendChild(p);
+    if (deferredInstall) { const i = sect("تثبيت التطبيق"); i.appendChild(mkBtn("📲 تثبيت VENOM على جهازك", "btn-gold", async () => { deferredInstall.prompt(); await deferredInstall.userChoice.catch(() => {}); deferredInstall = null; renderPage("settings"); })); body.appendChild(i); }
+  },
+
+  security(body) {
+    const u = currentUserDoc;
+    const s = sect("جهازك", "الحساب مربوط بجهاز واحد. أي جهاز جديد لازم ياخد موافقة.");
+    const devs = u.devices || [];
+    s.appendChild(card(`<div class="text-sm">الجهاز ده: <b>${esc(deviceLabel())}</b> <span class="text-[11px] text-zinc-500" dir="ltr">#${DEVICE_ID.slice(0, 6)}</span></div><div class="text-xs text-zinc-500 mt-1">الأجهزة المعتمدة: ${isOwnerMe() ? "الرئيس غير مقيّد بجهاز" : devs.length}</div>`));
+    body.appendChild(s);
+    const r = sect("طلبات دخول من أجهزة جديدة");
+    if (!myDeviceReqs.length) r.appendChild(card(`<span class="text-sm text-zinc-500">مفيش طلبات.</span>`));
+    myDeviceReqs.forEach((q) => {
+      const c = card(`<div class="text-sm mb-2">📱 <b>${esc(q.label)}</b> عايز يدخل بحسابك (${q.mode === "replace" ? "تبديل الجهاز" : "إضافة جهاز"})</div><div class="flex gap-2"></div>`, "mb-2");
+      c.lastChild.appendChild(mkBtn("✅ موافقة", "btn-green", () => approveDevice(q, true)));
+      c.lastChild.appendChild(mkBtn("رفض", "btn-red", () => approveDevice(q, false)));
+      r.appendChild(c);
+    });
+    body.appendChild(r);
+    const a = sect("إجراءات");
+    const row = document.createElement("div"); row.className = "flex flex-wrap gap-2";
+    if (!isOwnerMe()) row.appendChild(mkBtn("🚪 فصل كل الأجهزة الأخرى", "btn-red", async () => { if (!confirm("هتفضل الجهاز ده بس معتمد. تكمل؟")) return; try { await updateDoc(doc(db, "users", myUid()), { devices: [DEVICE_ID] }); toast("اتم"); } catch (e) { showErr(e); } }));
+    row.appendChild(mkBtn("🔑 تغيير كلمة المرور (رابط على إيميلي)", "btn-gray", () => sendPasswordResetEmail(auth, currentUserDoc.email).then(() => alert("اتبعت رابط على " + currentUserDoc.email)).catch(showErr)));
+    a.appendChild(row); body.appendChild(a);
+  },
+
+  about(body) {
+    const s = sect("الشفافية والإشراف");
+    s.appendChild(card(`<p class="text-sm leading-relaxed text-zinc-300">لأغراض الحماية والإشراف، صاحب المنصة له صلاحية الاطلاع على جميع المحادثات (العامة والخاصة والجروبات)، والنسخ الأصلية للرسائل قبل التعديل أو الحذف، والصور والفيديوهات والتسجيلات (حتى المرسلة "لمرة واحدة")، وحالة الاتصال والكتابة والاستلام والقراءة، بغض النظر عن إعدادات الخصوصية. محادثاتك مع Kainom AI محفوظة على جهازك فقط وبتتبعت لخدمة الذكاء الاصطناعي للرد.</p>`));
+    body.appendChild(s);
+    body.appendChild(card(`<div class="text-xs text-zinc-500">VENOM Chat — إصدار 2</div>`));
+  }
+};
+
+/* ---------------- الخلفيات ---------------- */
+function wallCurrent() {
+  return wallTarget.roomId ? chatWall[wallTarget.roomId] : wall[wallTarget.scope];
+}
+function wallPickerNode() {
+  const wrap = document.createElement("div");
+  const cur = wallCurrent();
+  const grid = document.createElement("div");
+  grid.className = "grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3";
+  WALLS.forEach(([k, label, css]) => {
+    const b = document.createElement("button");
+    b.className = "rounded-xl h-20 text-xs border-2 flex items-end justify-center pb-1 " + ((cur || "") === (k === "none" ? "none" : k) ? "border-amber-400" : "border-zinc-700");
+    b.style.background = css || "#27272a"; b.style.color = k >= "w7" && k !== "none" ? "#18181b" : "#fff";
+    b.innerText = label;
+    b.onclick = () => setWall(k === "none" ? "none" : k);
+    grid.appendChild(b);
+  });
+  wrap.appendChild(grid);
+  const row = document.createElement("div"); row.className = "flex gap-2 flex-wrap";
+  row.appendChild(mkBtn("📷 صورة من جهازك", "btn-gold", () => $("file-wall").click()));
+  row.appendChild(mkBtn("↺ الافتراضي", "btn-gray", () => setWall(null)));
+  wrap.appendChild(row);
+  if (cur && cur.startsWith("img:")) wrap.insertAdjacentHTML("beforeend", `<p class="text-[11px] text-zinc-500 mt-2">الخلفية الحالية: صورة مخصصة.</p>`);
+  return wrap;
+}
+async function setWall(v) {
+  try {
+    if (wallTarget.roomId) {
+      const ref = doc(db, "users", myUid(), "prefs", "wp_" + wallTarget.roomId);
+      if (v === null) await deleteDoc(ref); else await setDoc(ref, { v });
+    } else {
+      const nw = { ...wall };
+      if (v === null) delete nw[wallTarget.scope]; else nw[wallTarget.scope] = v;
+      await setDoc(doc(db, "users", myUid(), "prefs", "wall"), nw);
+    }
+    toast("اتحفظت الخلفية");
+    if (!$("modal-gen").classList.contains("hidden") && wallTarget.roomId) closePanel("gen");
+  } catch (e) { showErr(e); }
+}
+window.openWallpaperPicker = function (scope, roomId) {
+  wallTarget = { scope: "all", roomId };
+  const n = wallPickerNode();
+  openGen("🖼 خلفية المحادثة دي", n);
+};
+$("file-wall").onchange = async (e) => {
+  const f = e.target.files && e.target.files[0]; e.target.value = "";
+  if (!f) return;
+  try {
+    let q = 0.6, d = await blobToDataURL(await compressImage(f, 1000, q));
+    while (d.length > 380000 && q > 0.25) { q -= 0.1; d = await blobToDataURL(await compressImage(f, 900, q)); }
+    await setWall("img:" + d);
+  } catch (er) { alert(er.message || er); }
+};
+$("file-avatar").onchange = async (e) => {
+  const f = e.target.files && e.target.files[0]; e.target.value = "";
+  if (!f) return;
+  try { pendingPhoto = await photoDataUrl(f, 160); renderPage("settings"); } catch (er) { alert(er.message || er); }
+};
+
+/* ---------------- لوحة التحكم ---------------- */
+function genCode() {
+  const bytes = new Uint8Array(6);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[b % 32]).join("");
+}
+function watchInvites() {
+  listen(collection(db, "invites"), (snap) => {
+    invitesCache = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => tsMs(b.createdAt) - tsMs(a.createdAt));
+    refreshPageIfOpen("admin");
+  });
+}
+function watchPendingUsers() {}
+function watchAllUsers() {
+  listen(collection(db, "users"), (snap) => {
+    usersCache = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    updateAdminBadge(); refreshPageIfOpen("admin");
+  });
+}
+function watchReports() {
+  listen(query(collection(db, "reports"), where("status", "==", "open")), (snap) => {
+    reportsCache = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    updateAdminBadge(); refreshPageIfOpen("admin");
+  });
+}
+const statusAr = { approved: "مفعّل", pending: "بانتظار الموافقة", suspended: "موقوف" };
+
+const ADMIN = {
+  members(body) {
+    const s = sect("كل الأعضاء");
+    const inp = document.createElement("input");
+    inp.className = "inp mb-3"; inp.placeholder = "ابحث بالاسم أو الإيميل أو الرقم..."; inp.value = adminQ;
+    const list = document.createElement("div"); list.className = "space-y-2";
+    const draw = () => {
+      list.innerHTML = "";
+      const q = normalize(adminQ);
+      usersCache.filter((u) => u.role !== "owner" && (!q || normalize(u.name).includes(q) || normalize(u.email).includes(q) || (u.phone || "").includes(adminQ.trim()))).forEach((u) => {
+        const c = card(`<div class="flex items-center gap-2 mb-2">${avatarHtml(u.id, 36, true)}<div class="flex-1 min-w-0"><div class="text-sm font-bold truncate">${esc(u.name)} <span class="text-[10px] text-zinc-500 font-normal">${u.role === "admin" ? "أدمن" : "عضو"} · ${statusAr[u.status] || u.status}</span></div><div class="text-[11px] text-zinc-500 truncate" dir="ltr" style="text-align:right">${esc(u.email || "")}</div>${u.phone ? `<div class="text-[11px] text-zinc-300" dir="ltr" style="text-align:right">📞 ${esc(u.phone)} ${phoneVerified(u) ? "✅ موثّق" : "⏳ غير موثّق"}</div>` : ""}</div></div><div class="flex flex-wrap gap-2"></div>`);
+        const a = c.lastChild;
+        if (isOwnerMe() && u.status === "approved") a.appendChild(mkBtn(u.role === "admin" ? "إلغاء الأدمن" : "تعيين أدمن", "btn-gray", () => updateDoc(doc(db, "users", u.id), { role: u.role === "admin" ? "member" : "admin" }).catch(showErr)));
+        if (u.status === "approved" || u.status === "suspended") { const susp = u.status === "suspended"; a.appendChild(mkBtn(susp ? "إعادة تفعيل" : "إيقاف للمراجعة", susp ? "btn-green" : "btn-red", () => updateDoc(doc(db, "users", u.id), { status: susp ? "approved" : "suspended" }).catch(showErr))); }
+        if (isOwnerMe() && u.phone) a.appendChild(mkBtn(phoneVerified(u) ? "إلغاء توثيق الرقم" : "✅ توثيق الرقم", "btn-gray", () => updateDoc(doc(db, "users", u.id), phoneVerified(u) ? { verifiedPhone: deleteField() } : { verifiedPhone: u.phone }).catch(showErr)));
+        if (isOwnerMe()) a.appendChild(mkBtn("📱 تصفير الأجهزة", "btn-gray", () => { if (confirm("هيتسجل أول جهاز يدخل بعد كده؟")) updateDoc(doc(db, "users", u.id), { devices: [] }).then(() => toast("اتصفّرت")).catch(showErr); }));
+        a.appendChild(mkBtn("💬 محادثة", "btn-gray", () => { closePage("admin"); startDm(u.id); }));
+        list.appendChild(c);
+      });
+      if (!list.children.length) list.innerHTML = `<p class="text-zinc-500 text-sm">مفيش نتايج.</p>`;
+    };
+    inp.oninput = () => { adminQ = inp.value; draw(); };
+    s.appendChild(inp); s.appendChild(list); body.appendChild(s); draw();
+  },
+  pending(body) {
+    const s = sect("طلبات الأعضاء الجدد");
+    const p = usersCache.filter((u) => u.status === "pending");
+    if (!p.length) s.appendChild(card(`<span class="text-sm text-zinc-500">لا توجد طلبات معلقة.</span>`));
+    p.forEach((u) => { const c = card(`<div class="flex items-center gap-2"><span class="flex-1 text-sm">${esc(u.name)} <span class="text-zinc-500 text-xs" dir="ltr">(${esc(u.email)})</span></span></div>`, "mb-2"); c.firstChild.appendChild(mkBtn("موافقة", "btn-green", () => updateDoc(doc(db, "users", u.id), { status: "approved" }).catch(showErr))); s.appendChild(c); });
+    body.appendChild(s);
+  },
+  reports(body) {
+    const s = sect("البلاغات المفتوحة");
+    if (!reportsCache.length) s.appendChild(card(`<span class="text-sm text-zinc-500">مفيش بلاغات مفتوحة.</span>`));
+    [...reportsCache].sort((a, b) => tsMs(b.createdAt) - tsMs(a.createdAt)).forEach((r) => {
+      const c = card(`<div class="text-sm"><b>${esc(nameOf(r.reporter))}</b> بلّغ عن <b class="text-red-400">${esc(nameOf(r.reportedUid))}</b></div><div class="text-sm text-zinc-300 my-2 whitespace-pre-wrap">${esc(r.reason)}</div><div class="text-[11px] text-zinc-500 mb-2">${esc(r.roomTitle || "")}</div><div class="flex flex-wrap gap-2"></div>`, "mb-2 border-red-900/60");
+      const a = c.lastChild;
+      if (r.roomId) a.appendChild(mkBtn("فتح المحادثة", "btn-gray", () => { closePage("admin"); openChat(r.roomId, r.roomType || "group"); }));
+      a.appendChild(mkBtn("إيقاف المُبلَّغ عنه", "btn-red", () => { if (confirm("توقف حساب " + nameOf(r.reportedUid) + " لحد المراجعة؟")) updateDoc(doc(db, "users", r.reportedUid), { status: "suspended" }).catch(showErr); }));
+      a.appendChild(mkBtn("تم الحل", "btn-green", () => updateDoc(doc(db, "reports", r.id), { status: "resolved" })));
+      s.appendChild(c);
+    });
+    body.appendChild(s);
+  },
+  invites(body) {
+    const s = sect("أكواد الدعوة");
+    const bar = card(`<div class="flex flex-wrap gap-2 items-center"><select id="inv-type" class="bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-sm"><option value="once">مرة واحدة</option><option value="limited">عدد محدد</option><option value="unlimited">لا نهائي</option></select><input type="number" id="inv-max" min="2" value="5" class="hidden w-20 bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-sm"></div>`, "mb-3");
+    bar.firstChild.appendChild(mkBtn("توليد كود", "btn-gold", async () => {
+      const type = $("inv-type").value; let maxUses = 0;
+      if (type === "once") maxUses = 1;
+      if (type === "limited") { maxUses = parseInt($("inv-max").value, 10); if (!maxUses || maxUses < 2) { alert("اكتب عدد صحيح 2 أو أكتر."); return; } }
+      try { await setDoc(doc(db, "invites", genCode()), { maxUses, uses: 0, active: true, createdAt: serverTimestamp() }); } catch (e) { showErr(e); }
+    }));
+    s.appendChild(bar);
+    bar.querySelector("#inv-type").onchange = (e) => bar.querySelector("#inv-max").classList.toggle("hidden", e.target.value !== "limited");
+    if (!invitesCache.length) s.appendChild(card(`<span class="text-sm text-zinc-500">مفيش أكواد. اعمل كود جديد.</span>`));
+    invitesCache.forEach((v) => {
+      const exhausted = v.maxUses !== 0 && v.uses >= v.maxUses, usable = v.active && !exhausted;
+      const label = v.maxUses === 0 ? `${v.uses} استخدام (لا نهائي)` : `${v.uses} / ${v.maxUses}`;
+      const c = card(`<div class="flex items-center gap-2 flex-wrap"><code class="font-mono ${usable ? "text-amber-400" : "text-zinc-600 line-through"}">${esc(v.id)}</code><span class="text-xs text-zinc-400 flex-1">${label}${!v.active ? " - متوقف" : exhausted ? " - خلص" : ""}</span></div>`, "mb-2");
+      const r = c.firstChild;
+      r.appendChild(mkBtn("نسخ", "btn-gray !px-2", () => navigator.clipboard.writeText(v.id).then(() => toast("اتنسخ"))));
+      r.appendChild(mkBtn(v.active ? "إيقاف" : "تفعيل", "btn-gray !px-2", () => updateDoc(doc(db, "invites", v.id), { active: !v.active })));
+      r.appendChild(mkBtn("حذف", "btn-red !px-2", () => { if (confirm("تحذف الكود ده؟")) deleteDoc(doc(db, "invites", v.id)); }));
+      s.appendChild(c);
+    });
+    body.appendChild(s);
+  },
+  recovery(body) {
+    const s = sect("طلبات استرداد الحساب", "بالرقم: بيتطابق تلقائي مع الأرقام المسجلة. بالاسم: راجعه بنفسك وتأكد قبل ما تبعت رابط.");
+    if (!recoveryCache.length) s.appendChild(card(`<span class="text-sm text-zinc-500">مفيش طلبات.</span>`));
+    recoveryCache.forEach((r) => {
+      const ph = normPhone(r.phone);
+      const byPhone = ph ? usersCache.filter((u) => u.phone && normPhone(u.phone) === ph) : [];
+      const byName = r.name ? usersCache.filter((u) => normalize(u.name) === normalize(r.name) && !byPhone.includes(u)) : [];
+      const c = card(`<div class="text-sm">الاسم: <b>${esc(r.name || "—")}</b> · الرقم: <b dir="ltr">${esc(r.phone || "—")}</b></div>${r.note ? `<div class="text-xs text-zinc-400 mt-1">${esc(r.note)}</div>` : ""}<div id="rm" class="mt-2 space-y-2"></div>`, "mb-2");
+      const m = c.querySelector("#rm");
+      const addMatch = (u, how) => {
+        const row = document.createElement("div"); row.className = "flex items-center gap-2 flex-wrap bg-zinc-800 rounded-lg p-2";
+        row.innerHTML = `<span class="text-sm flex-1">${how} → <b>${esc(u.name)}</b> <span class="text-[11px] text-zinc-400" dir="ltr">${esc(u.email)}</span></span>`;
+        row.appendChild(mkBtn("📧 ابعت رابط إعادة تعيين", "btn-gold", () => sendPasswordResetEmail(auth, u.email).then(() => toast("اتبعت الرابط على " + u.email)).catch(showErr)));
+        m.appendChild(row);
+      };
+      byPhone.forEach((u) => addMatch(u, "📞 تطابق رقم" + (phoneVerified(u) ? " موثّق" : "")));
+      byName.forEach((u) => addMatch(u, "👤 تطابق اسم (راجع)"));
+      if (!byPhone.length && !byName.length) m.innerHTML = `<span class="text-xs text-zinc-500">مفيش تطابق.</span>`;
+      c.appendChild(mkBtn("تم الحل", "btn-green mt-2", () => updateDoc(doc(db, "recoveryRequests", r.id), { status: "resolved" }).catch(showErr)));
+      s.appendChild(c);
+    });
+    body.appendChild(s);
+  },
+  devices(body) {
+    const s = sect("طلبات الأجهزة الجديدة", "الموافقة هنا بتعمل نفس اللي بيعمله صاحب الحساب من جهازه المعتمد.");
+    if (!deviceReqsAll.length) s.appendChild(card(`<span class="text-sm text-zinc-500">مفيش طلبات.</span>`));
+    deviceReqsAll.forEach((q) => {
+      const c = card(`<div class="text-sm mb-2"><b>${esc(nameOf(q.uid))}</b> — 📱 ${esc(q.label)} — ${q.mode === "replace" ? "تبديل الجهاز" : "إضافة جهاز"}</div><div class="flex gap-2"></div>`, "mb-2");
+      c.lastChild.appendChild(mkBtn("✅ موافقة", "btn-green", () => approveDevice(q, true)));
+      c.lastChild.appendChild(mkBtn("رفض", "btn-red", () => approveDevice(q, false)));
+      s.appendChild(c);
+    });
+    body.appendChild(s);
+  },
+  control(body) {
+    const s = sect("الجروب العام");
+    const c = card(`<div class="flex items-center gap-3"><span class="flex-1 text-sm">${publicOpen ? "🟢 مفتوح للكتابة" : "🔒 مقفول (قراءة فقط)"}</span></div><p class="text-[11px] text-zinc-500 mt-2">لما يتقفل، الأعضاء بيقروا بس، وإنت والأدمن بتكتبوا.</p>`);
+    c.firstChild.appendChild(mkBtn(publicOpen ? "قفل الجروب" : "فتح الجروب", publicOpen ? "btn-red" : "btn-green", () => setDoc(doc(db, "settings", "public"), { open: !publicOpen }).catch(showErr)));
+    s.appendChild(c);
+    const row = document.createElement("div"); row.className = "mt-2";
+    row.appendChild(mkBtn("🧨 مسح كل رسائل الجروب العام للجميع", "btn-red", wipePublic));
+    s.appendChild(row);
+    body.appendChild(s);
+    const k = sect("Kainom AI", "إنت بس اللي تقدر تغير صورته.");
+    const kc = card(`<div class="flex items-center gap-3">${kainomAvatar(56)}</div>`);
+    kc.firstChild.appendChild(mkBtn("🖼 تغيير الصورة", "btn-gold", () => $("file-kainom").click()));
+    kc.firstChild.appendChild(mkBtn("↺ الأصلية", "btn-gray", () => setDoc(doc(db, "settings", "kainom"), { photo: "" }).catch(showErr)));
+    k.appendChild(kc); body.appendChild(k);
+  }
+};
+
+/* =========================================================
+   الحالات (Stories) — 24 ساعة
+   ========================================================= */
+const STORY_BGS = ["#7c3aed", "#db2777", "#dc2626", "#d97706", "#059669", "#0284c7", "#334155", "#111827"];
+const storyLive = (s) => tsMs(s.expiresAt) > Date.now();
+function storiesByUser() {
+  const map = {};
+  storiesCache.filter(storyLive).forEach((s) => { (map[s.uid] = map[s.uid] || []).push(s); });
+  return map;
+}
+function watchStories() {
+  listen(query(collection(db, "stories"), where("expiresAt", ">", Timestamp.now())), (snap) => {
+    storiesCache = snap.docs.map((d) => ({ id: d.id, ...d.data({ serverTimestamps: "estimate" }) })).sort((a, b) => tsMs(a.createdAt) - tsMs(b.createdAt));
+    renderStoriesStrip();
+  });
+}
+function renderStoriesStrip() {
+  const el = $("stories-strip");
+  if (!el || !currentUserDoc) return;
+  const me = myUid(), by = storiesByUser();
+  const seenAll = (uid) => (by[uid] || []).every((s) => s.viewers && s.viewers[me]);
+  const bubble = (uid, label, extra = "") => {
+    const has = !!by[uid];
+    return `<div class="flex flex-col items-center shrink-0 w-16 cursor-pointer" data-story="${esc(uid)}"><div class="relative ${has ? "story-ring" + (seenAll(uid) && uid !== me ? " seen" : "") : ""}"><div class="${has ? "bg-black rounded-full p-[2px]" : ""}">${avatarHtml(uid, 52)}</div>${extra}</div><span class="text-[10px] mt-1 truncate w-full text-center text-zinc-400">${esc(label)}</span></div>`;
+  };
+  let html = bubble(me, "حالتي", `<span data-addstory class="absolute -bottom-1 -left-1 bg-amber-500 text-black rounded-full w-5 h-5 flex items-center justify-center text-sm font-bold leading-none">+</span>`);
+  Object.keys(by).filter((u) => u !== me).sort((a, b) => (seenAll(a) ? 1 : 0) - (seenAll(b) ? 1 : 0)).forEach((u) => { html += bubble(u, nameOf(u)); });
+  el.innerHTML = html;
+}
+$("stories-strip").addEventListener("click", (e) => {
+  if (e.target.closest("[data-addstory]")) { openStoryComposer(); return; }
+  const b = e.target.closest("[data-story]");
+  if (!b) return;
+  const uid = b.dataset.story, by = storiesByUser();
+  if (by[uid]) openStoryViewer(uid); else if (uid === myUid()) openStoryComposer();
+});
+
+function openStoryComposer() {
+  let mode = "text", bg = STORY_BGS[0], photo = "";
+  const w = document.createElement("div");
+  const draw = () => {
+    w.innerHTML = `<div class="flex gap-2 mb-3"></div>`;
+    const tabs = w.firstChild;
+    tabs.appendChild(mkBtn("✍ نص", mode === "text" ? "btn-gold" : "btn-gray", () => { mode = "text"; draw(); }));
+    tabs.appendChild(mkBtn("🖼 صورة", mode === "image" ? "btn-gold" : "btn-gray", () => { mode = "image"; draw(); }));
+    if (mode === "text") {
+      const ta = document.createElement("textarea");
+      ta.id = "st-text"; ta.maxLength = 700; ta.rows = 5; ta.placeholder = "اكتب حالتك…";
+      ta.className = "w-full rounded-xl p-4 text-white text-center text-xl outline-none mb-2"; ta.style.background = bg;
+      ta.value = w._text || ""; ta.oninput = () => { w._text = ta.value; };
+      w.appendChild(ta);
+      const sw = document.createElement("div"); sw.className = "flex gap-2 mb-3";
+      STORY_BGS.forEach((c) => { const b = document.createElement("button"); b.className = "w-8 h-8 rounded-full border-2 " + (c === bg ? "border-white" : "border-transparent"); b.style.background = c; b.onclick = () => { w._text = ta.value; bg = c; draw(); }; sw.appendChild(b); });
+      w.appendChild(sw);
+    } else {
+      const box = document.createElement("div");
+      box.className = "rounded-xl bg-zinc-900 border border-zinc-700 mb-2 flex items-center justify-center min-h-[10rem] overflow-hidden";
+      box.innerHTML = photo ? `<img src="${photo}" class="max-h-72 object-contain">` : `<span class="text-zinc-500 text-sm">اختار صورة</span>`;
+      box.style.cursor = "pointer"; box.onclick = () => $("file-story").click();
+      w.appendChild(box);
+      const cap = document.createElement("input"); cap.className = "inp mb-3"; cap.maxLength = 200; cap.placeholder = "تعليق (اختياري)"; cap.id = "st-cap"; cap.value = w._cap || ""; cap.oninput = () => { w._cap = cap.value; };
+      w.appendChild(cap);
+    }
+    w.appendChild(mkBtn("نشر الحالة (24 ساعة)", "btn-gold w-full !py-3", async () => {
+      const me = myUid();
+      const data = { uid: me, type: mode, createdAt: serverTimestamp(), expiresAt: Timestamp.fromMillis(Date.now() + 24 * 3600 * 1000), viewers: {} };
+      if (mode === "text") { const t = (w._text || "").trim(); if (!t) { alert("اكتب حاجة الأول"); return; } data.text = t.slice(0, 700); data.bg = bg; }
+      else { if (!photo) { alert("اختار صورة"); return; } data.photo = photo; data.text = ""; const c = (w._cap || "").trim(); if (c) data.caption = c.slice(0, 200); }
+      try { await addDoc(collection(db, "stories"), data); closePanel("gen"); toast("اتنشرت الحالة"); } catch (e) { showErr(e); }
+    }));
+    w.insertAdjacentHTML("beforeend", `<p class="text-[11px] text-zinc-500 mt-2">كل الأعضاء بيشوفوا الحالة وصاحب المنصة بيشوف مين شافها.</p>`);
+  };
+  w._set = (p) => { photo = p; draw(); };
+  window._storyComposer = w;
+  draw();
+  openGen("🟢 حالة جديدة", w);
+}
+$("file-story").onchange = async (e) => {
+  const f = e.target.files && e.target.files[0]; e.target.value = "";
+  if (!f || !window._storyComposer) return;
+  try {
+    let q = 0.6, d = await blobToDataURL(await compressImage(f, 720, q));
+    while (d.length > 140000 && q > 0.2) { q -= 0.1; d = await blobToDataURL(await compressImage(f, 640, q)); }
+    window._storyComposer._set(d);
+  } catch (er) { alert(er.message || er); }
+};
+
+let sv = { list: [], idx: 0, timer: null, t0: 0 };
+function openStoryViewer(uid) {
+  const list = (storiesByUser()[uid] || []);
+  if (!list.length) return;
+  const me = myUid();
+  const firstUnseen = list.findIndex((s) => !(s.viewers && s.viewers[me]));
+  sv = { list, idx: firstUnseen < 0 ? 0 : firstUnseen, timer: null, t0: 0 };
+  $("story-viewer").classList.remove("hidden");
+  showStory();
+}
+function closeStoryViewer() { clearInterval(sv.timer); $("story-viewer").classList.add("hidden"); $("sv-body").innerHTML = ""; renderStoriesStrip(); }
+function showStory() {
+  clearInterval(sv.timer);
+  const s = sv.list[sv.idx];
+  if (!s) { closeStoryViewer(); return; }
+  const me = myUid();
+  $("sv-bars").innerHTML = sv.list.map((_, i) => `<div class="flex-1 h-1 rounded bg-white/25 overflow-hidden"><div data-bar="${i}" class="h-full bg-white" style="width:${i < sv.idx ? 100 : 0}%"></div></div>`).join("");
+  $("sv-av").innerHTML = avatarHtml(s.uid, 36);
+  $("sv-name").innerHTML = nameHtml(s.uid);
+  $("sv-time").innerText = fmtListTime(tsMs(s.createdAt)) + " " + fmtTime(tsMs(s.createdAt));
+  const body = $("sv-body");
+  if (s.type === "image" && validStoryPhoto(s.photo)) body.innerHTML = `<img src="${s.photo}" class="max-h-full max-w-full object-contain">${s.caption ? `<div class="absolute bottom-6 inset-x-0 text-center px-4"><span class="bg-black/60 px-3 py-1 rounded-lg text-sm">${esc(s.caption)}</span></div>` : ""}`;
+  else body.innerHTML = `<div class="w-full h-full flex items-center justify-center p-8 text-center text-2xl font-bold msg-text" style="background:${hexOk(s.bg) ? s.bg : "#111827"}">${esc(s.text)}</div>`;
+  const canSee = s.uid === me || isOwnerMe();
+  const vw = Object.keys(s.viewers || {});
+  $("sv-info").classList.toggle("hidden", !canSee); $("sv-count").innerText = vw.length;
+  $("sv-del").classList.toggle("hidden", !(s.uid === me || isOwnerMe()));
+  if (s.uid !== me && !(s.viewers && s.viewers[me])) updateDoc(doc(db, "stories", s.id), { [`viewers.${me}`]: serverTimestamp() }).catch(() => {});
+  sv.t0 = Date.now();
+  sv.timer = setInterval(() => {
+    const p = Math.min(100, ((Date.now() - sv.t0) / 5000) * 100);
+    const bar = document.querySelector(`[data-bar="${sv.idx}"]`); if (bar) bar.style.width = p + "%";
+    if (p >= 100) { sv.idx++; showStory(); }
+  }, 80);
+}
+const validStoryPhoto = (p) => typeof p === "string" && /^data:image\/(jpeg|png|webp);base64,/.test(p.slice(0, 40));
+$("sv-body").addEventListener("click", (e) => { const r = $("sv-body").getBoundingClientRect(); if (e.clientX < r.left + r.width / 2) { sv.idx++; } else { sv.idx = Math.max(0, sv.idx - 1); } showStory(); });
+$("sv-close").onclick = closeStoryViewer;
+$("sv-del").onclick = async () => { const s = sv.list[sv.idx]; if (!s || !confirm("تمسح الحالة دي؟")) return; try { await deleteDoc(doc(db, "stories", s.id)); sv.list.splice(sv.idx, 1); showStory(); } catch (e) { showErr(e); } };
+$("sv-info").onclick = () => {
+  const s = sv.list[sv.idx]; if (!s) return;
+  clearInterval(sv.timer);
+  const vs = Object.entries(s.viewers || {}).sort((a, b) => tsMs(b[1]) - tsMs(a[1]));
+  const html = vs.length ? vs.map(([u, t]) => `<div class="flex items-center gap-2 py-1">${avatarHtml(u, 30)}<span class="flex-1 text-sm">${nameHtml(u)}</span><span class="text-[10px] text-zinc-500">${fmtListTime(tsMs(t))} ${fmtTime(tsMs(t))}</span></div>`).join("") : `<p class="text-sm text-zinc-500">لسه محدش شاف الحالة.</p>`;
+  openGen("👁 مين شاف الحالة (" + vs.length + ")", html);
+  $("modal-gen").style.zIndex = 95;
+};
+
+/* =========================================================
+   تطبيق قابل للتثبيت (PWA) + اختصارات
+   ========================================================= */
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredInstall = e; });
 if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }
+matchMedia("(prefers-color-scheme: light)").addEventListener && matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => { if (theme.mode === "auto") applyTheme(); });
 </script>
 </body>
 </html>
