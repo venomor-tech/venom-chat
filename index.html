@@ -775,8 +775,8 @@ async function deviceGate() {
   if (isOwnerMe()) return true;                       // الرئيس مستثنى عشان ميتقفلش على نفسه
   const devs = currentUserDoc.devices || [];
   if (!devs.length) {
-    await updateDoc(doc(db, "users", myUid()), { devices: [DEVICE_ID] });
-    currentUserDoc.devices = [DEVICE_ID];
+    try { await updateDoc(doc(db, "users", myUid()), { devices: [DEVICE_ID] }); currentUserDoc.devices = [DEVICE_ID]; }
+    catch (e) { console.warn("device bind failed (rules not published?)", e); }   // ما نوقفش الدخول لو القواعد القديمة لسه شغالة
     return true;
   }
   if (devs.includes(DEVICE_ID)) return true;
@@ -825,6 +825,7 @@ async function approveDevice(req, approve) {
 async function routeUser(user) {
   ["auth-screen", "pending-screen", "suspended-screen", "app-screen", "lock-screen"].forEach((i) => show(i, false));
   if (!user) { show("auth-screen", true); return; }
+  let step = "قراءة الحساب";
   try {
     let uSnap = await getDoc(doc(db, "users", user.uid));
     if (!uSnap.exists()) {
@@ -846,12 +847,14 @@ async function routeUser(user) {
       }));
       return;
     }
+    step = "ربط الجهاز";
     if (!(await deviceGate())) return;
+    step = "تشغيل التطبيق";
     startApp();
   } catch (e) {
     console.error(e);
     show("auth-screen", true);
-    alert("مشكلة في الاتصال بقاعدة البيانات: " + (e.code || e.message) + "\nتأكد إن Firestore Database متعمل وإن الـ Rules منشورة.");
+    alert("مشكلة في الاتصال بقاعدة البيانات (الخطوة: " + step + "): " + (e.code || e.message) + "\nتأكد إن Firestore Database متعمل وإن الـ Rules منشورة.");
   }
 }
 
