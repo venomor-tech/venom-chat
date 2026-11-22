@@ -1,5 +1,7 @@
 // Service worker بسيط: الشبكة أولًا، ولو مفيش نت يفتح آخر نسخة اتحملت.
-const CACHE = "venom-v2";
+const CACHE = "venom-v3";
+const CDN = "venom-cdn-v3";
+const CDN_HOSTS = ["www.gstatic.com", "cdn.tailwindcss.com"];
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon-192.png"];
 
 self.addEventListener("install", (e) => {
@@ -9,7 +11,7 @@ self.addEventListener("install", (e) => {
 
 self.addEventListener("activate", (e) => {
   e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE && k !== CDN).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -18,7 +20,15 @@ self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
-  if (url.origin !== self.location.origin) return; // Firebase وباقي المكتبات تروح للشبكة مباشرة
+  if (CDN_HOSTS.includes(url.hostname)) {   // مكتبات Firebase وTailwind: نسخة محفوظة تتحدث في الخلفية
+    e.respondWith(caches.open(CDN).then(async (c) => {
+      const hit = await c.match(req);
+      const net = fetch(req).then((res) => { if (res && (res.ok || res.type === "opaque")) c.put(req, res.clone()).catch(() => {}); return res; }).catch(() => hit);
+      return hit || net;
+    }));
+    return;
+  }
+  if (url.origin !== self.location.origin) return; // باقي الطلبات الخارجية للشبكة مباشرة
   e.respondWith(
     fetch(req)
       .then((res) => {

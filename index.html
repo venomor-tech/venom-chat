@@ -354,7 +354,7 @@ import {
   signOut, onAuthStateChanged, sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import {
-  getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, getDoc, getDocs,
+  getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, addDoc, query, orderBy, onSnapshot, doc, getDoc, getDocs,
   setDoc, updateDoc, deleteDoc, where, serverTimestamp, limit, arrayUnion, arrayRemove,
   writeBatch, increment, deleteField, Timestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -385,7 +385,9 @@ const VAPID_KEY = "";           // Firebase > Project settings > Cloud Messaging
 const FB = "https://www.gstatic.com/firebasejs/10.8.0/";
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+let db;
+try { db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); }   // حفظ الشاتات على الجهاز + طابور الإرسال أوفلاين
+catch (e) { console.warn("persistence", e); db = getFirestore(app); }
 let rtdb = null, rt = {}, storage = null, st = {};
 
 /* ---------------- الحالة ---------------- */
@@ -442,6 +444,20 @@ const isPriv = () => currentUserDoc && (currentUserDoc.role === "owner" || curre
 const isOwnerMe = () => currentUserDoc && currentUserDoc.role === "owner";
 const myUid = () => currentUserDoc.uid;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+/* تنفيذ batch: لو مفيش نت الكتابة بتتحط في الطابور وبتتبعت لوحدها لما النت يرجع */
+async function fire(batch) {
+  const p = batch.commit();
+  p.catch((e) => { if (e && e.code === "permission-denied") toast("⚠️ رسالة اتبعتت أوفلاين واترفضت من السيرفر (الإذن اتغيّر)", 6000); });
+  const r = await Promise.race([p.then(() => "ok"), sleep(2500).then(() => "slow")]);
+  if (r === "slow") toast(navigator.onLine ? "⏳ الاتصال بطيء… الرسالة هتتبعت أول ما يتأكد" : "📴 مفيش نت — الرسالة هتتبعت أول ما النت يرجع", 4500);
+}
+const offBar = document.createElement("div");
+offBar.className = "hidden fixed top-0 inset-x-0 z-[95] bg-amber-600 text-black text-center text-xs py-1";
+offBar.innerText = "📴 أوفلاين — بتشوف النسخة المحفوظة على جهازك، والرسايل الجديدة هتتبعت لما النت يرجع";
+document.addEventListener("DOMContentLoaded", () => document.body.appendChild(offBar));
+if (document.body) document.body.appendChild(offBar);
+const syncOff = () => offBar.classList.toggle("hidden", navigator.onLine);
+addEventListener("online", syncOff); addEventListener("offline", syncOff); syncOff();
 
 function show(id, visible) { $(id).classList.toggle("hidden", !visible); }
 window.openPanel = (n) => $("modal-" + n).classList.remove("hidden");
@@ -1928,7 +1944,7 @@ async function deleteMsg(m) {
     const b = writeBatch(db);
     b.set(doc(db, "rooms", currentRoomId, "messages", m.id, "versions", String(rev)), ver);
     b.update(doc(db, "rooms", currentRoomId, "messages", m.id), { text: "", deleted: true, rev, media: deleteField() });
-    await b.commit();
+    await fire(b);
   } catch (e) { showErr(e); }
 }
 async function commitEdit(text) {
@@ -1937,7 +1953,7 @@ async function commitEdit(text) {
   const b = writeBatch(db);
   b.set(doc(db, "rooms", currentRoomId, "messages", m.id, "versions", String(rev)), { text: m.text, by: me, at: serverTimestamp(), type: "edit" });
   b.update(doc(db, "rooms", currentRoomId, "messages", m.id), { text, edited: true, rev });
-  await b.commit();
+  await fire(b);
 }
 async function openVersions(m) {
   if (!isOwnerMe()) return;
@@ -2030,7 +2046,7 @@ async function commitMessage(msg, preview, mentions = []) {
   batch.set(doc(collection(db, "rooms", currentRoomId, "messages")), msg);
   if (currentRoomType === "public") batch.set(parentRef(), lastPayload(preview, mentions), { merge: true });
   else batch.update(parentRef(), lastPayload(preview, mentions));
-  await batch.commit();
+  await fire(batch);
   stopTyping();
   scrollNext = true;
   pushToRoom(preview);
