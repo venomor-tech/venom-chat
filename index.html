@@ -1709,7 +1709,7 @@ function tickHtml(m) {
 const KIND_LABEL = { csticker: "🏷 ملصق", image: "📷 صورة", video: "🎞 فيديو", audio: "🎤 رسالة صوتية", file: "📄 ملف" };
 function safeUrl(u) {
   if (typeof u !== "string" || !u) return "";
-  if (/^https:\/\/(firebasestorage\.googleapis\.com|[a-z0-9-]+\.firebasestorage\.app|storage\.googleapis\.com)\//.test(u)) return u;
+  if (/^https:\/\/(firebasestorage\.googleapis\.com|[a-z0-9-]+\.firebasestorage\.app|storage\.googleapis\.com|res\.cloudinary\.com)\//.test(u)) return u;
   if (/^data:(image|audio|video)\/[\w.+-]+(;codecs=[\w.,-]+)?;base64,/.test(u.slice(0, 90))) return u;
   return "";
 }
@@ -2124,7 +2124,7 @@ function busy(msg) {
   return () => t.remove();
 }
 const extOf = (name, mime) => ((name || "").split(".").pop() || "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 5) || (mime || "bin").split("/").pop().replace(/[^a-z0-9]/g, "").slice(0, 5) || "bin";
-const useCloud = (vo) => !!(CLOUDINARY_CLOUD && CLOUDINARY_PRESET) && !vo;   // "لمرة واحدة" ما بيروحش Cloudinary (الرابط عام)
+const useCloud = () => !!(CLOUDINARY_CLOUD && CLOUDINARY_PRESET);
 async function uploadCloud(blob, name) {
   const fd = new FormData();
   fd.append("file", blob, name); fd.append("upload_preset", CLOUDINARY_PRESET);
