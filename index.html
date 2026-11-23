@@ -1713,6 +1713,12 @@ function safeUrl(u) {
   if (/^data:(image|audio|video)\/[\w.+-]+(;codecs=[\w.,-]+)?;base64,/.test(u.slice(0, 90))) return u;
   return "";
 }
+// تحسين التسليم من Cloudinary (نسخة أصغر وأسرع)، ولو فشلت نرجع للأصل
+function cldOpt(u, kind) {
+  const m = /^(https:\/\/res\.cloudinary\.com\/[^/]+\/)(image|video)(\/upload\/)(.+)$/.exec(u || "");
+  if (!m || m[2] !== kind || /^[a-z]{1,3}_/.test(m[4])) return u;
+  return m[1] + m[2] + m[3] + (kind === "video" ? "q_auto:low,w_640/" : "f_auto,q_auto,w_1280/") + m[4];
+}
 const mediaSrc = (md) => safeUrl((md && (md.url || md.inline)) || "");
 function fmtSize(n) { return n > 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round((n || 0) / 1024)) + " KB"; }
 function fmtDur(s) { s = Math.round(s || 0); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
@@ -1766,12 +1772,12 @@ function mediaNode(m, md, opts = {}) {
   if (!src) { wrap.innerHTML = `<div class="text-xs opacity-70">${KIND_LABEL[kind] || "ملف"} (غير متاح)</div>`; return wrap; }
   if (kind === "image") {
     const img = document.createElement("img");
-    img.src = src; img.loading = "lazy"; img.className = "rounded-lg max-h-72 max-w-full object-cover cursor-zoom-in";
+    img.src = cldOpt(src, "image"); img.onerror = () => { if (img.src !== src) img.src = src; }; img.loading = "lazy"; img.className = "rounded-lg max-h-72 max-w-full object-cover cursor-zoom-in";
     img.onclick = (e) => { e.stopPropagation(); openViewer("image", src, md.name || ""); };
     wrap.appendChild(img);
   } else if (kind === "video") {
     const v = document.createElement("video");
-    v.src = src; v.controls = true; v.preload = "metadata"; if (/^https:\/\/res\.cloudinary\.com\//.test(src)) v.poster = src.replace(/\.\w+$/, ".jpg"); v.playsInline = true; v.className = "rounded-lg max-h-72 max-w-full";
+    v.src = cldOpt(src, "video"); v.onerror = () => { if (v.src !== src) { v.src = src; v.load(); } }; v.controls = true; v.preload = "metadata"; if (/^https:\/\/res\.cloudinary\.com\//.test(src)) v.poster = src.replace(/\.\w+$/, ".jpg"); v.playsInline = true; v.className = "rounded-lg max-h-72 max-w-full";
     v.onclick = (e) => e.stopPropagation();
     wrap.appendChild(v);
   } else if (kind === "audio") {
