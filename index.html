@@ -384,6 +384,8 @@ const OWNER_TAG = "منشئ الموقع";
 
 /* اختياري: إشعارات فورية والذكاء الاصطناعي (شوف README.md) */
 const WORKER_URL = "";          // مثال: "https://venom-worker.YOURNAME.workers.dev"
+const CLOUDINARY_CLOUD = "sy6dsim6";    // Cloudinary Cloud name (مجاني، من غير فيزا) — لرفع الصور/الفيديو/الملفات بدل Firebase Storage
+const CLOUDINARY_PRESET = "venom_upload";   // اسم الـ Unsigned upload preset
 const VAPID_KEY = "";           // Firebase > Project settings > Cloud Messaging > Web Push certificates
 
 const FB = "https://www.gstatic.com/firebasejs/10.8.0/";
@@ -2122,7 +2124,17 @@ function busy(msg) {
   return () => t.remove();
 }
 const extOf = (name, mime) => ((name || "").split(".").pop() || "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 5) || (mime || "bin").split("/").pop().replace(/[^a-z0-9]/g, "").slice(0, 5) || "bin";
+const useCloud = (vo) => !!(CLOUDINARY_CLOUD && CLOUDINARY_PRESET) && !vo;   // "لمرة واحدة" ما بيروحش Cloudinary (الرابط عام)
+async function uploadCloud(blob, name) {
+  const fd = new FormData();
+  fd.append("file", blob, name); fd.append("upload_preset", CLOUDINARY_PRESET);
+  const r = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(CLOUDINARY_CLOUD)}/auto/upload`, { method: "POST", body: fd });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.secure_url) throw Object.assign(new Error((j.error && j.error.message) || "cloudinary " + r.status), { code: "cloudinary/failed" });
+  return { url: j.secure_url };
+}
 async function uploadMedia(blob, room, ext, vault) {
+  if (useCloud(vault)) return uploadCloud(blob, `${Date.now()}.${ext}`);
   if (!storage) throw new Error("storage-unavailable");
   const name = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const path = `media/${room}/${myUid()}/${name}`;
@@ -2141,8 +2153,12 @@ async function sendMedia(blob, o) {
   if (o.dur) media.dur = o.dur;
   try {
     try {
-      const up = await uploadMedia(blob, room, extOf(o.name, blob.type), o.viewOnce);
-      media.path = up.path; media.url = up.url;
+      const canFallback = o.kind === "image" || o.kind === "audio" || (o.kind === "video" && !!o.refit);
+      const up = await Promise.race([
+        uploadMedia(blob, room, extOf(o.name, blob.type), o.viewOnce),
+        new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error("Storage مش بيرد (غالبًا مش مفعّل)"), { code: "storage/timeout" })), useCloud(o.viewOnce) ? 180000 : canFallback ? 1000 : 90000))
+      ]);
+      if (up.path) media.path = up.path; media.url = up.url;
     } catch (e) {
       console.warn("upload", e);
       if (blob.size <= 470000 && (o.kind === "image" || o.kind === "audio")) media.inline = await blobToDataURL(blob);
@@ -2150,6 +2166,12 @@ async function sendMedia(blob, o) {
         const b2 = await o.refit();
         if (!b2) { done(); alert("الصورة كبيرة جدًا. جرّب صورة تانية أو لقطة شاشة."); return; }
         media.inline = await blobToDataURL(b2); media.size = b2.size; media.mime = "image/jpeg";
+      }
+      else if (o.kind === "video" && o.refit) {            // فيديو: ضغط وتصغير (حد أقصى 60 ثانية) وتخزينه جوه الرسالة
+        let b2 = null;
+        try { b2 = await o.refit(); } catch (er) { console.warn("vrefit", er); }
+        if (!b2) { done(); alert("مقدرتش أصغّر الفيديو ده. جرّب فيديو أقصر أو أصغر، أو فعّل Firebase Storage."); return; }
+        media.inline = await blobToDataURL(b2); media.size = b2.size; media.mime = b2.type || "video/webm"; media.trimmed = !!b2.trimmed;
       }
       else { done(); alert("مقدرتش أرفع الملف: الفيديو والملفات الكبيرة محتاجة Firebase Storage (محتاج ترقية Blaze).\n" + (e.code || e.message)); return; }
     }
@@ -2163,6 +2185,51 @@ async function sendMedia(blob, o) {
   done();
 }
 let pendingViewOnce = false;
+
+// تصغير فيديو بإعادة تسجيله (حد أقصى 60 ثانية) عشان يتخزن جوه الرسالة من غير Storage
+async function videoRefit(file, maxSec = 60, budget = 470000) {
+  const v = document.createElement("video");
+  v.playsInline = true; v.preload = "auto"; v.src = URL.createObjectURL(file);
+  try {
+    await new Promise((ok, no) => { v.onloadedmetadata = ok; v.onerror = () => no(new Error("bad video")); });
+    const full0 = isFinite(v.duration) && v.duration > 0 ? v.duration : maxSec;
+    const d0 = Math.min(full0, maxSec);
+    const maxPx = d0 <= 15 ? 480 : d0 <= 30 ? 360 : 280, fps = d0 <= 30 ? 15 : 10;   // كل ما الفيديو أطول، الدقة أقل عشان يدخل
+    const sc = Math.min(1, maxPx / Math.max(v.videoWidth || maxPx, v.videoHeight || maxPx));
+    const c = document.createElement("canvas");
+    c.width = Math.max(2, Math.round((v.videoWidth || 480) * sc) & ~1); c.height = Math.max(2, Math.round((v.videoHeight || 480) * sc) & ~1);
+    const ctx = c.getContext("2d");
+    const full = isFinite(v.duration) && v.duration > 0 ? v.duration : maxSec;
+    const dur = Math.min(full, maxSec);
+    const stream = c.captureStream(fps);
+    let hasAudio = false;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext; const ac = new AC();
+      const dest = ac.createMediaStreamDestination(); ac.createMediaElementSource(v).connect(dest);
+      dest.stream.getAudioTracks().forEach((t) => { stream.addTrack(t); hasAudio = true; });
+    } catch (_) { v.muted = true; }
+    const mime = ["video/webm;codecs=vp8,opus", "video/webm;codecs=vp8", "video/webm", "video/mp4"].find((m) => window.MediaRecorder && MediaRecorder.isTypeSupported(m));
+    if (!mime) return null;
+    const vbps = Math.max(60000, Math.min(700000, Math.floor(budget * 8 / dur) - (hasAudio ? 16000 : 0) - 6000));
+    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: vbps, audioBitsPerSecond: 16000 });
+    const chunks = []; rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+    const stopped = new Promise((r) => { rec.onstop = r; });
+    rec.start(500);
+    try { await v.play(); } catch (_) { v.muted = true; await v.play(); }
+    const t0 = performance.now();
+    await new Promise((ok) => {
+      const tick = setInterval(() => {
+        ctx.drawImage(v, 0, 0, c.width, c.height);
+        if (v.ended || v.currentTime >= dur || (performance.now() - t0) / 1000 > dur + 3) { clearInterval(tick); ok(); }
+      }, 66);
+    });
+    try { v.pause(); } catch (_) {}
+    rec.stop(); await stopped;
+    const blob = new Blob(chunks, { type: mime.split(";")[0] + (mime.includes("codecs") ? ";codecs=" + mime.split("codecs=")[1].split(",")[0] : "") });
+    if (full > maxSec + 0.5) blob.trimmed = true;
+    return blob.size > 0 && blob.size <= 500000 ? blob : null;
+  } finally { URL.revokeObjectURL(v.src); }
+}
 async function handleFiles(files, kind) {
   const vo = pendingViewOnce; pendingViewOnce = false;
   for (const f of files) {
@@ -2173,7 +2240,7 @@ async function handleFiles(files, kind) {
         await sendMedia(blob, { kind: "image", name: f.name.replace(/\.\w+$/, "") + ".jpg", viewOnce: vo, refit });
       }
       catch (e) { alert(e.message); }
-    } else if (kind === "video" || f.type.startsWith("video/")) await sendMedia(f, { kind: "video", name: f.name, viewOnce: vo });
+    } else if (kind === "video" || f.type.startsWith("video/")) await sendMedia(f, { kind: "video", name: f.name, viewOnce: vo, refit: () => videoRefit(f) });
     else if (f.type.startsWith("audio/")) await sendMedia(f, { kind: "audio", name: f.name, viewOnce: vo });
     else await sendMedia(f, { kind: "file", name: f.name });
   }
